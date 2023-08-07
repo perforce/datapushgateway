@@ -232,6 +232,10 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 		http.Error(w, "Please specify customer and instance", http.StatusBadRequest)
 		return
 	}
+
+	// Log the received customer and instance information
+	logger.Infof("Received JSON data for customer: %s, instance: %s", customer, instance)
+
 	// Process JSON data
 	var jsonData []map[string]interface{}
 	decoder := json.NewDecoder(req.Body)
@@ -251,14 +255,13 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 		dataMap[fmt.Sprintf("Item%d", i+1)] = string(itemStr)
 	}
 
-	// Print out the map for better understanding
+	// Log the JSON data map for better understanding
 	logger.Debugf("JSON Data Map:")
 	for key, value := range dataMap {
 		logger.Debugf("%s: %s", key, value)
 	}
 
 	// Call the ProcessDataMap function to work with the data map
-	//	ProcessDataMap(dataMap, configFile, dataDir)
 	ProcessDataMap(dataMap, configFile, dataDir, logger, customer, instance)
 	// Now you can process each object in the JSON array differently.
 	//	for _, dataItem := range jsonData {
