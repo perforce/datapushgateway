@@ -29,7 +29,6 @@ type SortConfig struct {
 }
 
 // CreateMarkdownFiles generates Markdown files based on the grouped data.
-// CreateMarkdownFiles generates Markdown files based on the grouped data.
 func CreateMarkdownFiles(dataDir string, groupedData map[string][]string, sortConfig *SortConfig, logger *logrus.Logger, customer string, instance string) error {
 	// Create a map to store the directory for each file name
 	dirMap := make(map[string]string)
@@ -44,6 +43,9 @@ func CreateMarkdownFiles(dataDir string, groupedData map[string][]string, sortCo
 
 		// If the directory contains %INSTANCE%, replace it with the actual instance name
 		directory = strings.Replace(directory, "%INSTANCE%", instance, -1)
+
+		// Replace any remaining %INSTANCE& with the actual instance name
+		directory = strings.Replace(directory, "%INSTANCE&", instance, -1)
 
 		// Create the directory if it doesn't exist
 		dirPath := filepath.Join(dataDir, customer, directory)
