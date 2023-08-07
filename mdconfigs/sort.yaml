@@ -1,0 +1,58 @@
+file_configs:
+  - file_name: HRA-%INSTANCE%
+    directory: servers
+    monitor_tags:
+      - AWS
+      - GCP
+      - hostnamectl
+      - systemd
+      - crontab
+      - p4 configure
+      - p4 triggers
+      - p4 extensions
+      - p4 servers
+      - p4 property
+      - p4 ztag
+      - "pathtofile: /etc/group"
+  - file_name: support
+    directory: servers/%INSTANCE%
+    monitor_tags:
+      - p4 servers
+      - p4 configure
+      - p4 ztag
+  - file_name: info
+    directory: info
+    monitor_tags:
+      - p4 triggers
+      - p4 extensions
+      - p4 servers
+      - p4 property
+      - p4 ztag
+  - file_name: triggers
+    directory: info
+    monitor_tags:
+      - p4 triggers
+  - file_name: extensions
+    directory: info
+    monitor_tags:
+      - p4 extensions
+  - file_name: property
+    directory: info
+    monitor_tags:
+      - p4 property
+  - file_name: crontab
+    directory: info
+    monitor_tags:
+      - crontab
+  - file_name: systemd
+    directory: info
+    monitor_tags:
+      - systemd
+  - file_name: p4configure
+    directory: info
+    monitor_tags:
+      - p4 configure
+  - file_name: p4servers
+    directory: info
+    monitor_tags:
+      - p4 servers
