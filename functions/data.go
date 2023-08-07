@@ -53,16 +53,15 @@ func CreateMarkdownFiles(dataDir string, groupedData map[string][]string, sortCo
 			return fmt.Errorf("error creating directory %s: %v", dirPath, err)
 		}
 
-		// Create the Markdown file for the current file
-		filePath := filepath.Join(dirPath, fmt.Sprintf("%s.md", fileName))
-		file, err := os.Create(filePath)
-		if err != nil {
-			return fmt.Errorf("error creating Markdown file %s: %v", filePath, err)
-		}
-		defer file.Close()
-
 		// Get the items for the current file name and sort them based on the order specified in sort.yaml
 		items := groupedData[fileName]
+
+		// Skip creating the Markdown file if there are no items for this fileName
+		if len(items) == 0 {
+			logger.Debugf("Skipping empty Markdown file for %s", fileName)
+			continue
+		}
+
 		sort.SliceStable(items, func(i, j int) bool {
 			item1Data := make(map[string]interface{})
 			item2Data := make(map[string]interface{})
@@ -84,6 +83,13 @@ func CreateMarkdownFiles(dataDir string, groupedData map[string][]string, sortCo
 		})
 
 		// Write the Markdown content to the file
+		filePath := filepath.Join(dirPath, fmt.Sprintf("%s.md", fileName))
+		file, err := os.Create(filePath)
+		if err != nil {
+			return fmt.Errorf("error creating Markdown file %s: %v", filePath, err)
+		}
+		defer file.Close()
+
 		for _, item := range items {
 			var itemData map[string]interface{}
 			if err := json.Unmarshal([]byte(item), &itemData); err != nil {
