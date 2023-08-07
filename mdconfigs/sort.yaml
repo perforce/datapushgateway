@@ -13,7 +13,7 @@ file_configs:
       - p4 servers
       - p4 property
       - p4 ztag
-      - "pathtofile: /etc/group"
+      - "pathtofile: /etc/hosts"
   - file_name: support
     directory: servers/%INSTANCE%
     monitor_tags:
@@ -21,7 +21,7 @@ file_configs:
       - p4 configure
       - p4 ztag
   - file_name: info
-    directory: info
+    directory: servers/%INSTANCE&/info
     monitor_tags:
       - p4 triggers
       - p4 extensions
@@ -29,30 +29,34 @@ file_configs:
       - p4 property
       - p4 ztag
   - file_name: triggers
-    directory: info
+    directory: servers/%INSTANCE&/info
     monitor_tags:
       - p4 triggers
   - file_name: extensions
-    directory: info
+    directory: servers/%INSTANCE&/info
     monitor_tags:
       - p4 extensions
   - file_name: property
-    directory: info
+    directory: servers/%INSTANCE&/info
     monitor_tags:
       - p4 property
   - file_name: crontab
-    directory: info
+    directory: servers/%INSTANCE&/info
     monitor_tags:
       - crontab
   - file_name: systemd
-    directory: info
+    directory: servers/%INSTANCE&/info
     monitor_tags:
       - systemd
   - file_name: p4configure
-    directory: info
+    directory: servers/%INSTANCE&/info
     monitor_tags:
       - p4 configure
   - file_name: p4servers
-    directory: info
+    directory: servers/%INSTANCE&/info
     monitor_tags:
       - p4 servers
+  - file_name: etc-hosts
+    directory: servers/%INSTANCE&/info
+    monitor_tags:
+      - "pathtofile: /etc/hosts"
