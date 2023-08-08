@@ -41,11 +41,8 @@ func CreateMarkdownFiles(dataDir string, groupedData map[string][]string, sortCo
 		fileName := fileConfig.FileName
 		directory := fileConfig.Directory
 
-		// If the directory contains %INSTANCE%, replace it with the actual instance name
+		// Replace any occurrence of %INSTANCE% with the actual instance name
 		directory = strings.Replace(directory, "%INSTANCE%", instance, -1)
-
-		// Replace any remaining %INSTANCE& with the actual instance name
-		directory = strings.Replace(directory, "%INSTANCE&", instance, -1)
 
 		// Create the directory if it doesn't exist
 		dirPath := filepath.Join(dataDir, customer, directory)
