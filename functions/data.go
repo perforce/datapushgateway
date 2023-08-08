@@ -85,8 +85,9 @@ func CreateMarkdownFiles(dataDir string, groupedData map[string][]string, sortCo
 		if err != nil {
 			return fmt.Errorf("error creating Markdown file %s: %v", filePath, err)
 		}
-		defer file.Close()
 
+		// Check if there is meaningful content to include in the Markdown file
+		hasContent := false
 		for _, item := range items {
 			var itemData map[string]interface{}
 			if err := json.Unmarshal([]byte(item), &itemData); err != nil {
@@ -96,18 +97,36 @@ func CreateMarkdownFiles(dataDir string, groupedData map[string][]string, sortCo
 
 			description, _ := itemData["description"].(string)
 			output, _ := itemData["output"].(string)
-			decodedOutput, err := base64.StdEncoding.DecodeString(output)
-			if err != nil {
-				logger.Errorf("Error decoding output data: %v", err)
-				continue
-			}
 
-			_, err = fmt.Fprintf(file, "# %s\n```\n%s\n```\n", description, decodedOutput)
-			if err != nil {
-				logger.Errorf("Error writing to file %s: %v", filePath, err)
+			// Skip writing to the Markdown file if the output is empty
+			if output != "" {
+				hasContent = true
+				decodedOutput, err := base64.StdEncoding.DecodeString(output)
+				if err != nil {
+					logger.Errorf("Error decoding output data: %v", err)
+					continue
+				}
+
+				_, err = fmt.Fprintf(file, "# %s\n```\n%s\n```\n", description, decodedOutput)
+				if err != nil {
+					logger.Errorf("Error writing to file %s: %v", filePath, err)
+				}
+			}
+		}
+
+		// Close the file after writing all content
+		file.Close()
+
+		// Remove the file if it has no content
+		if !hasContent {
+			if err := os.Remove(filePath); err != nil {
+				logger.Errorf("Error removing empty Markdown file %s: %v", filePath, err)
+			} else {
+				logger.Debugf("Skipping empty Markdown file for %s (no content)", fileName)
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -271,14 +290,14 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 	// Call the ProcessDataMap function to work with the data map
 	ProcessDataMap(dataMap, configFile, dataDir, logger, customer, instance)
 	// Now you can process each object in the JSON array differently.
-	//	for _, dataItem := range jsonData {
+	//      for _, dataItem := range jsonData {
 	//
-	//		logger.Debugf("Command: %s", command)
-	//		logger.Debugf("Description: %s", description)
-	//		logger.Debugf("Output: %s", output)
-	//		logger.Debugf("Monitor_Tag: %s", monitorTag)
-	//		logger.Debugf("----OUT------")
-	//	}
+	//              logger.Debugf("Command: %s", command)
+	//              logger.Debugf("Description: %s", description)
+	//              logger.Debugf("Output: %s", output)
+	//              logger.Debugf("Monitor_Tag: %s", monitorTag)
+	//              logger.Debugf("----OUT------")
+	//      }
 
 	// Respond with success
 	w.Write([]byte("JSON data processed\n"))
