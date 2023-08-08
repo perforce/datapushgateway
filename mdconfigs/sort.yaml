@@ -65,6 +65,10 @@ file_configs:
     directory: servers/%INSTANCE&/info
     monitor_tags:
       - swarm here
+  - file_name: swarm-info
+    directory: servers/%INSTANCE&/info
+    monitor_tags:
+      - swarm url
   - file_name: SDP-version
     directory: servers/%INSTANCE&/info
     monitor_tags:
