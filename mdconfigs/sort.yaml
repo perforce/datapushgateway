@@ -4,6 +4,7 @@ file_configs:
     monitor_tags:
       - AWS
       - GCP
+      - SDP Version
       - hostnamectl
       - systemd
       - crontab
@@ -64,3 +65,7 @@ file_configs:
     directory: servers/%INSTANCE&/info
     monitor_tags:
       - swarm here
+  - file_name: SDP-version
+    directory: servers/%INSTANCE&/info
+    monitor_tags:
+      - SDP Version
