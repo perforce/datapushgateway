@@ -62,14 +62,14 @@ file_configs:
     monitor_tags:
       - "pathtofile: /etc/hosts"
   - file_name: swarm-info
-    directory: servers/%INSTANCE&/info
+    directory: servers/%INSTANCE%/info
     monitor_tags:
       - swarm here
   - file_name: swarm-info
-    directory: servers/%INSTANCE&/info
+    directory: servers/%INSTANCE%/info
     monitor_tags:
       - swarm url
   - file_name: SDP-version
-    directory: servers/%INSTANCE&/info
+    directory: servers/%INSTANCE%/info
     monitor_tags:
       - SDP Version
