@@ -159,7 +159,7 @@ func LoadSortConfig(configFile string) (*SortConfig, error) {
 func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logger *logrus.Logger, customer string, instance string) {
 	sortConfig, err := LoadSortConfig(configFile)
 	if err != nil {
-		fmt.Printf("Error loading sort.yaml: %v\n", err)
+		logger.Errorf("Error loading sort.yaml: %v\n", err)
 		return
 	}
 
@@ -184,14 +184,14 @@ func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logge
 		var itemData map[string]interface{}
 		err := json.Unmarshal([]byte(value), &itemData)
 		if err != nil {
-			fmt.Printf("Error unmarshaling data for key %s: %v\n", key, err)
+			logger.Errorf("Error unmarshaling data for key %s: %v\n", key, err)
 			continue
 		}
 
 		// Extract the monitor tag from the item data
 		monitorTag, tagExists := itemData["monitor_tag"].(string)
 		if !tagExists {
-			fmt.Printf("Missing monitor_tag in item %s\n", key)
+			logger.Errorf("Missing monitor_tag in item %s\n", key)
 			continue
 		}
 
@@ -221,7 +221,7 @@ func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logge
 	// Call the CreateMarkdownFiles function to generate Markdown files
 	err = CreateMarkdownFiles(dataDir, groupedData, sortConfig, logger, customer, instance)
 	if err != nil {
-		fmt.Printf("Error creating Markdown files: %v\n", err)
+		logger.Errorf("Error creating Markdown files: %v\n", err)
 	}
 
 	// Your specific processing logic goes here.
@@ -289,18 +289,50 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 
 	// Call the ProcessDataMap function to work with the data map
 	ProcessDataMap(dataMap, configFile, dataDir, logger, customer, instance)
-	// Now you can process each object in the JSON array differently.
-	//      for _, dataItem := range jsonData {
-	//
-	//              logger.Debugf("Command: %s", command)
-	//              logger.Debugf("Description: %s", description)
-	//              logger.Debugf("Output: %s", output)
-	//              logger.Debugf("Monitor_Tag: %s", monitorTag)
-	//              logger.Debugf("----OUT------")
-	//      }
 
-	// Respond with success
-	w.Write([]byte("JSON data processed\n"))
+	// Run the P4 commands here
+	p4Command := "p4"
+
+	// Define the P4 arguments for each command
+	recArgs := []string{"rec"}
+	syncArgs := []string{"sync"}
+	resolveArgs := []string{"resolve", "-ay"}
+	submitArgs := []string{"submit", "-d", fmt.Sprintf("\"Customer: %s, Instance: %s, monitoring submit\"", customer, instance)}
+
+	// Print and run p4 rec command
+	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(recArgs, " "))
+	err := RunP4CommandWithEnvAndDir(p4Command, recArgs, true, dataDir, customer)
+	if err != nil {
+		logger.Errorf("Error running 'p4 rec': %v", err)
+		return
+	}
+
+	// Print and run p4 sync command
+	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(syncArgs, " "))
+	err = RunP4CommandWithEnvAndDir(p4Command, syncArgs, true, dataDir, customer)
+	if err != nil {
+		logger.Errorf("Error running 'p4 sync': %v", err)
+		return
+	}
+
+	// Print and run p4 resolve command
+	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(resolveArgs, " "))
+	err = RunP4CommandWithEnvAndDir(p4Command, resolveArgs, true, dataDir, customer)
+	if err != nil {
+		logger.Errorf("Error running 'p4 resolve -ay': %v", err)
+		return
+	}
+
+	// Print and run p4 submit command
+	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(submitArgs, " "))
+	err = RunP4CommandWithEnvAndDir(p4Command, submitArgs, true, dataDir, customer)
+	if err != nil {
+		logger.Errorf("Error running 'p4 submit': %v", err)
+		return
+	}
+
+	logger.Infof("P4 commands executed successfully")
+
 }
 func SaveData(dataDir, customer, instance, data string, logger *logrus.Logger) error {
 	newpath := filepath.Join(dataDir, customer, "servers")
