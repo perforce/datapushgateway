@@ -292,49 +292,53 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 
 	// Run the P4 commands here
 	p4Command := "p4"
-
+	err := P4SyncIT(p4Command, dataDir, customer, instance, logger)
+	if err != nil {
+		// Handle the error
+	}
 	//
 	//
 	// TODO Fix syncing. Its smarter but not smart enough.
 	//
 	// Define the P4 arguments for each command
-	recArgs := []string{"rec"}
-	syncArgs := []string{"sync"}
-	resolveArgs := []string{"resolve", "-ay"}
-	submitArgs := []string{"submit", "-d", fmt.Sprintf("\"Customer: %s, Instance: %s, monitoring submit\"", customer, instance)}
+	/*
+		recArgs := []string{"rec"}
+		syncArgs := []string{"sync"}
+		resolveArgs := []string{"resolve", "-ay"}
+		submitArgs := []string{"submit", "-d", fmt.Sprintf("\"Customer: %s, Instance: %s, monitoring submit\"", customer, instance)}
 
-	// Print and run p4 rec command
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(recArgs, " "))
-	err := RunP4CommandWithEnvAndDir(p4Command, recArgs, true, dataDir, customer)
-	if err != nil {
-		logger.Errorf("Error running 'p4 rec': %v", err)
-		return
-	}
+		// Print and run p4 rec command
+		logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(recArgs, " "))
+		err := RunP4CommandWithEnvAndDir(p4Command, recArgs, true, dataDir, customer)
+		if err != nil {
+			logger.Errorf("Error running 'p4 rec': %v", err)
+			return
+		}
 
-	// Print and run p4 sync command
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(syncArgs, " "))
-	err = RunP4CommandWithEnvAndDir(p4Command, syncArgs, true, dataDir, customer)
-	if err != nil {
-		logger.Errorf("Error running 'p4 sync': %v", err)
-		return
-	}
+		// Print and run p4 sync command
+		logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(syncArgs, " "))
+		err = RunP4CommandWithEnvAndDir(p4Command, syncArgs, true, dataDir, customer)
+		if err != nil {
+			logger.Errorf("Error running 'p4 sync': %v", err)
+			return
+		}
 
-	// Print and run p4 resolve command
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(resolveArgs, " "))
-	err = RunP4CommandWithEnvAndDir(p4Command, resolveArgs, true, dataDir, customer)
-	if err != nil {
-		logger.Errorf("Error running 'p4 resolve -ay': %v", err)
-		return
-	}
+		// Print and run p4 resolve command
+		logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(resolveArgs, " "))
+		err = RunP4CommandWithEnvAndDir(p4Command, resolveArgs, true, dataDir, customer)
+		if err != nil {
+			logger.Errorf("Error running 'p4 resolve -ay': %v", err)
+			return
+		}
 
-	// Print and run p4 submit command
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(submitArgs, " "))
-	err = RunP4CommandWithEnvAndDir(p4Command, submitArgs, true, dataDir, customer)
-	if err != nil {
-		logger.Errorf("Error running 'p4 submit': %v", err)
-		return
-	}
-
+		// Print and run p4 submit command
+		logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(submitArgs, " "))
+		err = RunP4CommandWithEnvAndDir(p4Command, submitArgs, true, dataDir, customer)
+		if err != nil {
+			logger.Errorf("Error running 'p4 submit': %v", err)
+			return
+		}
+	*/
 	logger.Infof("P4 commands executed successfully")
 
 }
