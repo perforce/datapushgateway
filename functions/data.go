@@ -293,6 +293,10 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 	// Run the P4 commands here
 	p4Command := "p4"
 
+	//
+	//
+	// TODO Fix syncing. Its smarter but not smart enough.
+	//
 	// Define the P4 arguments for each command
 	recArgs := []string{"rec"}
 	syncArgs := []string{"sync"}
@@ -353,6 +357,8 @@ func SaveData(dataDir, customer, instance, data string, logger *logrus.Logger) e
 	}
 	return nil
 }
+
+/* UNUSED
 func SaveDataV2(dataDir, customer, instance, data string, logger *logrus.Logger) error {
 	newpath := filepath.Join(dataDir, customer, "servers")
 	err := os.MkdirAll(newpath, os.ModePerm)
@@ -372,3 +378,4 @@ func SaveDataV2(dataDir, customer, instance, data string, logger *logrus.Logger)
 	}
 	return nil
 }
+*/

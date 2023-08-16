@@ -18,6 +18,11 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
+//
+// TODO Better Loggin
+// TODO Syncing in data.go
+//
+
 // We extract the bcrypted passwords from the config file used for prometheus pushgateway
 // A very simple yaml structure.
 var usersPasswords = map[string][]byte{}
