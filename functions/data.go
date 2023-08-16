@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -259,8 +258,10 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 	}
 
 	// Log the received customer and instance information with a timestamp
-	now := time.Now()
-	logger.Infof("INFO[%.4d] %s Received JSON data for customer: %s, instance: %s", now.Nanosecond()/1000, now.Format("2006/01/02 15:04:05"), customer, instance)
+	//  now := time.Now()
+	// TODO MOVE the timestamp goodies
+	//ugly	logger.Infof("INFO[%.4d] %s Received JSON data for customer: %s, instance: %s", now.Nanosecond()/1000, now.Format("2006/01/02 15:04:05"), customer, instance)
+	logger.Infof("Received JSON data for customer: %s, instance: %s", customer, instance)
 
 	// Process JSON data
 	var jsonData []map[string]interface{}
