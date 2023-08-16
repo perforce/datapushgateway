@@ -3,6 +3,7 @@ file_configs:
     directory: servers
     monitor_tags:
       - AWS
+      - AWS metadata
       - GCP
       - SDP Version
       - hostnamectl
