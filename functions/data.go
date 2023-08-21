@@ -236,31 +236,7 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Logger, dataDir string) {
-	// Ensure that the request is a POST request
-	if req.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	user, pass, ok := req.BasicAuth()
-	if !ok || !VerifyUserPass(user, pass) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="api"`)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-	query := req.URL.Query()
-	customer := query.Get("customer")
-	instance := query.Get("instance")
-	if customer == "" || instance == "" {
-		http.Error(w, "Please specify customer and instance", http.StatusBadRequest)
-		return
-	}
-
-	// Log the received customer and instance information with a timestamp
-	//  now := time.Now()
-	// TODO MOVE the timestamp goodies
-	//ugly	logger.Infof("INFO[%.4d] %s Received JSON data for customer: %s, instance: %s", now.Nanosecond()/1000, now.Format("2006/01/02 15:04:05"), customer, instance)
+func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Logger, dataDir string, customer string, instance string) {
 	logger.Infof("Received JSON data for customer: %s, instance: %s", customer, instance)
 
 	// Process JSON data
@@ -297,49 +273,7 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 	if err != nil {
 		// Handle the error
 	}
-	//
-	//
-	// TODO Fix syncing. Its smarter but not smart enough.
-	//
-	// Define the P4 arguments for each command
-	/*
-		recArgs := []string{"rec"}
-		syncArgs := []string{"sync"}
-		resolveArgs := []string{"resolve", "-ay"}
-		submitArgs := []string{"submit", "-d", fmt.Sprintf("\"Customer: %s, Instance: %s, monitoring submit\"", customer, instance)}
 
-		// Print and run p4 rec command
-		logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(recArgs, " "))
-		err := RunP4CommandWithEnvAndDir(p4Command, recArgs, true, dataDir, customer)
-		if err != nil {
-			logger.Errorf("Error running 'p4 rec': %v", err)
-			return
-		}
-
-		// Print and run p4 sync command
-		logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(syncArgs, " "))
-		err = RunP4CommandWithEnvAndDir(p4Command, syncArgs, true, dataDir, customer)
-		if err != nil {
-			logger.Errorf("Error running 'p4 sync': %v", err)
-			return
-		}
-
-		// Print and run p4 resolve command
-		logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(resolveArgs, " "))
-		err = RunP4CommandWithEnvAndDir(p4Command, resolveArgs, true, dataDir, customer)
-		if err != nil {
-			logger.Errorf("Error running 'p4 resolve -ay': %v", err)
-			return
-		}
-
-		// Print and run p4 submit command
-		logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(submitArgs, " "))
-		err = RunP4CommandWithEnvAndDir(p4Command, submitArgs, true, dataDir, customer)
-		if err != nil {
-			logger.Errorf("Error running 'p4 submit': %v", err)
-			return
-		}
-	*/
 	logger.Infof("P4 commands executed successfully")
 
 }
@@ -362,25 +296,3 @@ func SaveData(dataDir, customer, instance, data string, logger *logrus.Logger) e
 	}
 	return nil
 }
-
-/* UNUSED
-func SaveDataV2(dataDir, customer, instance, data string, logger *logrus.Logger) error {
-	newpath := filepath.Join(dataDir, customer, "servers")
-	err := os.MkdirAll(newpath, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	fname := filepath.Join(newpath, fmt.Sprintf("%s.md", instance))
-	f, err := os.Create(fname)
-	if err != nil {
-		logger.Errorf("Error opening %s: %v", fname, err)
-		return err
-	}
-	f.Write([]byte(data))
-	err = f.Close()
-	if err != nil {
-		logger.Errorf("Error closing file: %v", err)
-	}
-	return nil
-}
-*/

@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// TODO This package needs to be smarter.. Load the yaml to use it later and functions need to be a bit more flexiable
 // RunP4CommandWithEnvAndDir runs a p4 command with specified arguments, environment variables,
 // and an optional data directory.
 func RunP4CommandWithEnvAndDir(command string, args []string, includeDataDir bool, dataDir string, customer string) error {
@@ -85,7 +86,9 @@ func P4SyncIT(p4Command, dataDir, customer, instance string, logger *logrus.Logg
 	customerDirPath := filepath.Join(dataDir, customer, "/...")
 
 	//p4 rec
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(recArgs, " "))
+	//	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(recArgs, " "))
+	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(maskSensitiveData(recArgs), " "))
+
 	err = RunP4CommandWithEnvAndDir(p4Command, recArgs, true, dataDir, customer)
 	if err != nil {
 		logger.Errorf("Error running 'p4 rec': %v", err)
@@ -93,7 +96,8 @@ func P4SyncIT(p4Command, dataDir, customer, instance string, logger *logrus.Logg
 	}
 
 	// p4 sync
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(syncArgs, " "))
+	//logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(syncArgs, " "))
+	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(maskSensitiveData(syncArgs), " "))
 	err = RunP4CommandWithEnvAndDir(p4Command, syncArgs, true, dataDir, customer)
 	if err != nil {
 		logger.Errorf("Error running 'p4 sync': %v", err)
@@ -101,7 +105,8 @@ func P4SyncIT(p4Command, dataDir, customer, instance string, logger *logrus.Logg
 	}
 
 	// p4 resolve
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(resolveArgs, " "))
+	//logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(resolveArgs, " "))
+	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(maskSensitiveData(resolveArgs), " "))
 	err = RunP4CommandWithEnvAndDir(p4Command, resolveArgs, true, dataDir, customer)
 	if err != nil {
 		logger.Errorf("Error running 'p4 resolve -ay': %v", err)
@@ -125,6 +130,8 @@ func P4SyncIT(p4Command, dataDir, customer, instance string, logger *logrus.Logg
 	submitCmdWithEnv = append(submitCmdWithEnv, submitCmdArgs...) // Add the rest of the command arguments
 
 	//logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(submitCmdWithEnv, " "))
+	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(maskSensitiveData(submitCmdWithEnv), " "))
+
 	submitCmd := exec.Command(p4Command, submitCmdWithEnv...)
 	submitCmd.Env = os.Environ() // Use the current environment variables
 	submitCmd.Stdout = os.Stdout

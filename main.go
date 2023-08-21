@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 
 	"datapushgateway/functions"
 
@@ -25,7 +26,6 @@ import (
 
 // We extract the bcrypted passwords from the config file used for prometheus pushgateway
 // A very simple yaml structure.
-var usersPasswords = map[string][]byte{}
 
 // mainLogger is declared at the package level for the main function.
 var mainLogger *logrus.Logger
@@ -80,11 +80,23 @@ func main() {
 	})
 	// Update the handleJSONData call
 	mux.HandleFunc("/json/", func(w http.ResponseWriter, req *http.Request) {
-		functions.HandleJSONData(w, req, mainLogger, *dataDir)
+		//	functions.HandleJSONData(w, req, mainLogger, *dataDir)
+		//err := functions.HandleHTTP(w, req, mainLogger, *dataDir)
+		customer, instance, err := functions.HandleHTTP(w, req, mainLogger, *dataDir)
+
+		if err != nil {
+			// Handle the error (send an error response or log it)
+			return
+		}
+
+		// No errors, proceed to start your function
+		functions.HandleJSONData(w, req, mainLogger, *dataDir, customer, instance)
 	})
 
-	// Update the /data/ endpoint
+	// LEGACY /data/ endpoint
 	mux.HandleFunc("/data/", func(w http.ResponseWriter, req *http.Request) {
+		var validName = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+
 		user, pass, ok := req.BasicAuth()
 		if ok && functions.VerifyUserPass(user, pass) {
 			fmt.Fprintf(w, "Processed\n")
@@ -92,6 +104,13 @@ func main() {
 			mainLogger.Debugf("Request Params: %v", query)
 			customer := query.Get("customer")
 			instance := query.Get("instance")
+
+			// Check for valid customer and instance names
+			if !validName.MatchString(customer) || !validName.MatchString(instance) {
+				http.Error(w, "Invalid characters in customer or instance name", http.StatusBadRequest)
+				return
+			}
+
 			if customer == "" || instance == "" {
 				http.Error(w, "Please specify customer and instance", http.StatusBadRequest)
 				return
