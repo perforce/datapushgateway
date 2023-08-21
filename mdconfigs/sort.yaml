@@ -6,6 +6,7 @@ file_configs:
       - AWS metadata
       - GCP
       - SDP Version
+      - Command-Runner Version
       - hostnamectl
       - systemd
       - crontab
@@ -74,3 +75,7 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - SDP Version
+  - file_name: Command-Runner-version
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - Command-Runner Version
