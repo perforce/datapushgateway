@@ -10,6 +10,7 @@ file_configs:
       - license
       - hostnamectl
       - systemd
+      - disk space
       - crontab
       - p4 configure
       - p4 triggers
@@ -80,3 +81,15 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - Command-Runner Version
+  - file_name: misc
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - misc
+  - file_name: disk-space
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - disk space
+  - file_name: license
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - license
