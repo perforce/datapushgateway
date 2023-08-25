@@ -2,9 +2,13 @@ file_configs:
   - file_name: HRA-%INSTANCE%
     directory: servers
     monitor_tags:
+      - Autobot OS_test
+      - Autobot P4_test
+      - Autobot OS_disk-alerter
       - AWS
       - AWS metadata
       - GCP
+      - Autobot server_info
       - SDP Version
       - Command-Runner Version
       - license
@@ -12,6 +16,7 @@ file_configs:
       - systemd
       - disk space
       - crontab
+      - Autobot server_info
       - p4 configure
       - p4 triggers
       - p4 extensions
@@ -22,9 +27,17 @@ file_configs:
   - file_name: support
     directory: servers/%INSTANCE%
     monitor_tags:
+      - Autobot OS_disk-alerter
       - p4 servers
       - p4 configure
+      - Autobot P4_jack_ztag
       - p4 ztag
+  - file_name: bots-report
+    directory: servers/%INSTANCE%/autobots
+    monitor_tags:
+      - Autobot P4_jack_ztag
+      - Autobot OS_server_info
+      - Autobot OS_system_check
   - file_name: info
     directory: servers/%INSTANCE%/info
     monitor_tags:
@@ -81,6 +94,10 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - Command-Runner Version
+  - file_name: misc
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - misc
   - file_name: misc
     directory: servers/%INSTANCE%/info
     monitor_tags:
