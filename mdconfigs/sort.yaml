@@ -1,3 +1,10 @@
+#
+# - HAS_env
+# - swarm_config
+# - p4 loginhook configuration
+# - p4 loginhook extensions
+# - p4 loginhook instance
+
 file_configs:
   - file_name: HRA-%INSTANCE%
     directory: servers
@@ -16,13 +23,16 @@ file_configs:
       - systemd
       - disk space
       - crontab
-      - Autobot server_info
+      - HAS_env
       - p4 configure
       - p4 triggers
       - p4 extensions
       - p4 servers
       - p4 property
       - p4 ztag
+      - p4 loginhook configuration
+      - p4 loginhook extensions
+      - p4 loginhook instance
       - "pathtofile: /etc/hosts"
   - file_name: support
     directory: servers/%INSTANCE%
@@ -82,10 +92,12 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - swarm here
-  - file_name: swarm-info
+      - swarm url
+      - swarm_config
+  - file_name: has-info
     directory: servers/%INSTANCE%/info
     monitor_tags:
-      - swarm url
+      - HAS_env
   - file_name: SDP-version
     directory: servers/%INSTANCE%/info
     monitor_tags:
@@ -110,3 +122,5 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - license
+
+
