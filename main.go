@@ -1,7 +1,7 @@
 // This is a companion to prometheus pushgateway
 // It is aimed to allow the saving of some arbitrary data specifying customer and instance names
 // The aim is to be wrapped by a script which checks in the result on a regular basis.
-// The client which is pusing data to this tool via curl is report_instance_data.sh
+// The client which is pushing data to this tool via curl is report_instance_data.sh
 package main
 
 import (
@@ -19,12 +19,10 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-//
-// TODO Better Loggin
-// TODO Syncing in data.go
-//
+// TODO: Better Logging
+// TODO: Syncing in data.go
 
-// We extract the bcrypted passwords from the config file used for prometheus pushgateway
+// We extract the bcrypt passwords from the config file used for prometheus pushgateway
 // A very simple yaml structure.
 
 // mainLogger is declared at the package level for the main function.
@@ -34,7 +32,7 @@ func main() {
 	var (
 		authFile = kingpin.Flag(
 			"auth.file",
-			"Config file for pushgateway specifying user_basic_auth and list of user/bcrypted passwords.",
+			"Config file for pushgateway specifying user_basic_auth and list of user/bcrypt passwords.",
 		).String()
 		port = kingpin.Flag(
 			"port",
@@ -46,7 +44,7 @@ func main() {
 		).Bool()
 		dataDir = kingpin.Flag(
 			"data",
-			"directory where to store uploaded data.",
+			"Directory where to store uploaded data.",
 		).Short('d').Default("data").String()
 	)
 
@@ -58,10 +56,10 @@ func main() {
 	mainLogger = logrus.New()
 	if *debug {
 		mainLogger.Level = logrus.DebugLevel
+		mainLogger.Debug("Debugging is enabled")
 	} else {
 		mainLogger.Level = logrus.InfoLevel
 	}
-	// Create the logger after parsing the debug flag
 	functions.SetDebugMode(*debug)
 
 	err := functions.ReadAuthFile(*authFile)
@@ -70,73 +68,86 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+
+	// Middleware for logging connection details
+	ConnectionLoggingMiddleware := func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, req *http.Request) {
+			if mainLogger.Level == logrus.DebugLevel {
+				mainLogger.Debugf("Connection from %s", req.RemoteAddr)
+				mainLogger.Debugf("URL: %s", req.URL)
+				mainLogger.Debugf("Method: %s", req.Method)
+			}
+			next.ServeHTTP(w, req)
+		}
+	}
+
+	mux.HandleFunc("/", ConnectionLoggingMiddleware(func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/" {
 			http.NotFound(w, req)
 			return
 		}
 		w.WriteHeader(200)
 		fmt.Fprintf(w, "Data PushGateway\n")
-	})
-	// Update the handleJSONData call
-	mux.HandleFunc("/json/", func(w http.ResponseWriter, req *http.Request) {
-		//	functions.HandleJSONData(w, req, mainLogger, *dataDir)
-		//err := functions.HandleHTTP(w, req, mainLogger, *dataDir)
-		customer, instance, err := functions.HandleHTTP(w, req, mainLogger, *dataDir)
+	}))
 
+	mux.HandleFunc("/json/", ConnectionLoggingMiddleware(func(w http.ResponseWriter, req *http.Request) {
+		customer, instance, err := functions.HandleHTTP(w, req, mainLogger, *dataDir)
 		if err != nil {
-			// Handle the error (send an error response or log it)
 			return
 		}
-
-		// No errors, proceed to start your function
 		functions.HandleJSONData(w, req, mainLogger, *dataDir, customer, instance)
-	})
+	}))
 
-	// LEGACY /data/ endpoint
-	mux.HandleFunc("/data/", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("/data/", ConnectionLoggingMiddleware(func(w http.ResponseWriter, req *http.Request) {
 		var validName = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 		user, pass, ok := req.BasicAuth()
 		if ok && functions.VerifyUserPass(user, pass) {
-			fmt.Fprintf(w, "Processed\n")
+			mainLogger.Debugf("Basic auth verified for user: %s", user)
 			query := req.URL.Query()
-			mainLogger.Debugf("Request Params: %v", query)
 			customer := query.Get("customer")
 			instance := query.Get("instance")
 
-			// Check for valid customer and instance names
-			if !validName.MatchString(customer) || !validName.MatchString(instance) {
-				http.Error(w, "Invalid characters in customer or instance name", http.StatusBadRequest)
+			// Validate the customer and instance parameters
+			if customer == "" || instance == "" || !validName.MatchString(customer) || !validName.MatchString(instance) {
+				http.Error(w, "Invalid or missing customer or instance name", http.StatusBadRequest)
 				return
 			}
 
-			if customer == "" || instance == "" {
-				http.Error(w, "Please specify customer and instance", http.StatusBadRequest)
-				return
-			}
+			// Read the body of the request
 			body, err := io.ReadAll(req.Body)
 			if err != nil {
-				functions.Debugf("Error reading body: %v", err)
-				http.Error(w, "can't read body\n", http.StatusBadRequest)
+				mainLogger.Errorf("Error reading body: %v", err)
+				http.Error(w, "Cannot read body", http.StatusBadRequest)
 				return
 			}
 			mainLogger.Debugf("Request Body: %s", string(body))
-			functions.SaveData(*dataDir, customer, instance, string(body), mainLogger)
-			w.Write([]byte("Data saved\n"))
-			// Run the P4 commands here
+
+			// Save the data received to the filesystem
+			mainLogger.Debugf("Saving data to dataDir: %s, customer: %s", *dataDir, customer)
+			err = functions.SaveData(*dataDir, customer, instance, string(body), mainLogger)
+			if err != nil {
+				mainLogger.Errorf("Error saving data: %v", err)
+				http.Error(w, "Failed to save data", http.StatusInternalServerError)
+				return
+			}
+			w.Write([]byte("Data saved"))
+
+			// Synchronize the saved data with Perforce
 			p4Command := "p4"
 			err = functions.P4SyncIT(p4Command, *dataDir, customer, instance, mainLogger)
 			if err != nil {
 				mainLogger.Errorf("P4SyncIT error: %v", err)
-				http.Error(w, "Error syncing data with P4", http.StatusInternalServerError)
+				http.Error(w, "Error syncing data with Perforce", http.StatusInternalServerError)
 				return
 			}
+			w.Write([]byte("Data synced with Perforce"))
 		} else {
+			// Prompt for basic auth if verification fails
 			w.Header().Set("WWW-Authenticate", `Basic realm="api"`)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		}
-	})
+	}))
 
 	srv := &http.Server{
 		Addr:    *port,
@@ -149,6 +160,7 @@ func main() {
 
 	log.Printf("Starting server on %s", *port)
 	err = srv.ListenAndServe()
-	// .ListenAndServeTLS(*certFile, *keyFile)
-	log.Fatal(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
