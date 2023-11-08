@@ -124,6 +124,14 @@ func main() {
 			mainLogger.Debugf("Request Body: %s", string(body))
 			functions.SaveData(*dataDir, customer, instance, string(body), mainLogger)
 			w.Write([]byte("Data saved\n"))
+			// Run the P4 commands here
+			p4Command := "p4"
+			err = functions.P4SyncIT(p4Command, *dataDir, customer, instance, mainLogger)
+			if err != nil {
+				mainLogger.Errorf("P4SyncIT error: %v", err)
+				http.Error(w, "Error syncing data with P4", http.StatusInternalServerError)
+				return
+			}
 		} else {
 			w.Header().Set("WWW-Authenticate", `Basic realm="api"`)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
