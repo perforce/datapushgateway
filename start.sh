@@ -1,2 +1,2 @@
 #!/bin/bash
-./datapushgateway --auth.file=auth.yaml --data=data/datapushgateway
+./datapushgateway --debug --auth.file=auth.yaml --data=/home/datapushgateway/datapushgateway-master/data/datapushgateway 
