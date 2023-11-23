@@ -3,4 +3,4 @@ P4USER=bot_HRA_instance_monitor
 P4CLIENT=bot_HRA_instance_monitor_ws
 P4TICKETS=/home/datapushgateway/github-local/datapushgateway/p4stuff/.p4tickets
 P4TRUST=/home/datapushgateway/github-local/datapushgateway/p4stuff/.p4trust
-P4PASSWD=bot321!!
+

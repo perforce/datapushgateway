@@ -29,6 +29,7 @@ import (
 var mainLogger *logrus.Logger
 
 func main() {
+	functions.LoadConfig()
 	var (
 		authFile = kingpin.Flag(
 			"auth.file",
@@ -66,7 +67,12 @@ func main() {
 	if err != nil {
 		mainLogger.Fatal(err)
 	}
-
+	// Ensure Perforce login
+	if !functions.HasValidTicket(mainLogger) {
+		if err := functions.P4Login(mainLogger); err != nil {
+			mainLogger.Fatalf("Failed to log in to Perforce: %v", err)
+		}
+	}
 	mux := http.NewServeMux()
 
 	// Middleware for logging connection details
