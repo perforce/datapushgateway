@@ -1,7 +1,6 @@
 package functions
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -9,8 +8,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/yaml.v2"
 )
 
@@ -57,11 +58,15 @@ func P4Login(logger *logrus.Logger) error {
 
 	// Prompt for password and login
 	fmt.Print("Enter Perforce password: ")
-	password, err := bufio.NewReader(os.Stdin).ReadString('\n')
+
+	// Disable echoing of input characters
+	bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		return fmt.Errorf("failed to read password: %v", err)
 	}
-	password = strings.TrimSpace(password)
+
+	password := string(bytePassword)
+	fmt.Println() // Print a newline to move to the next line
 
 	return runP4Login(password, logger)
 }
