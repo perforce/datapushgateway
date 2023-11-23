@@ -1,147 +1,209 @@
 package functions
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/yaml.v2"
 )
 
-// TODO This package needs to be smarter.. Load the yaml to use it later and functions need to be a bit more flexiable
-// RunP4CommandWithEnvAndDir runs a p4 command with specified arguments, environment variables,
-// and an optional data directory.
-func RunP4CommandWithEnvAndDir(command string, args []string, includeDataDir bool, dataDir string, customer string) error {
-	// Read the environment variables from the config.yaml file in the root directory
+var p4ConfigPath string
+
+func LoadConfig() error {
 	configFile := "config.yaml"
-	configFilePath := filepath.Join(configFile)
-
-	// Load the environment variables from the config.yaml file
-	envVars := make(map[string]string)
-	configFileData, err := ioutil.ReadFile(configFilePath)
-	if err != nil {
-		return err
-	}
-	err = yaml.Unmarshal(configFileData, &envVars)
+	configData, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		return err
 	}
 
-	// Create the environment variables for the command
-	cmdEnv := os.Environ()
-	for key, value := range envVars {
-		cmdEnv = append(cmdEnv, fmt.Sprintf("%s=%s", key, value))
+	var config map[string]string
+	err = yaml.Unmarshal(configData, &config)
+	if err != nil {
+		return err
 	}
 
-	// Create the command with arguments
-	cmdArgs := []string{}
+	path, ok := config["P4CONFIG"]
+	if !ok || path == "" {
+		return fmt.Errorf("P4CONFIG not found in config.yaml")
+	}
+
+	p4ConfigPath = path
+	// Add a debug log statement to show the loaded .p4config path
+	logger.Debugf("Loaded .p4config file: %s", p4ConfigPath)
+	return nil
+}
+
+func P4Login(logger *logrus.Logger) error {
+	os.Setenv("P4CONFIG", p4ConfigPath)
+
+	// Check if already logged in using 'p4 login -s'
+	loginStatusCmd := exec.Command("p4", "login", "-s")
+	if err := loginStatusCmd.Run(); err == nil {
+		logger.Info("Already logged in to Perforce.")
+		return nil // Already logged in
+	}
+
+	// Handle trust if needed
+	if err := handleP4Trust(logger); err != nil {
+		return err
+	}
+
+	// Prompt for password and login
+	fmt.Print("Enter Perforce password: ")
+
+	// Disable echoing of input characters
+	bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		return fmt.Errorf("failed to read password: %v", err)
+	}
+
+	password := string(bytePassword)
+	fmt.Println() // Print a newline to move to the next line
+
+	return runP4Login(password, logger)
+}
+
+func HasValidTicket(logger *logrus.Logger) bool {
+	os.Setenv("P4CONFIG", p4ConfigPath)
+	cmd := exec.Command("p4", "tickets")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Debugf("Error checking tickets: %s", output)
+		return false
+	}
+	return strings.Contains(string(output), "ticket expires in")
+}
+
+func handleP4Trust(logger *logrus.Logger) error {
+	// Check if trust is already established
+	checkTrustCmd := exec.Command("p4", "trust", "-l")
+	checkOutput, checkErr := checkTrustCmd.CombinedOutput()
+	if checkErr == nil && strings.Contains(string(checkOutput), "Trust already established") {
+		logger.Info("Perforce trust already established.")
+		return nil // Trust is already established, no need to proceed further
+	}
+
+	// Establish trust
+	cmd := exec.Command("p4", "trust", "-y")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Errorf("Error running 'p4 trust': %v", err)
+		logger.Errorf("Output: %s", output)
+		return err
+	}
+	logger.Infof("p4 trust output: %s", output)
+	return nil
+}
+
+func runP4Login(password string, logger *logrus.Logger) error {
+	cmd := exec.Command("p4", "login", "-a")
+	var stdin bytes.Buffer
+	stdin.Write([]byte(password + "\n"))
+	cmd.Stdin = &stdin
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		logger.Errorf("Error running 'p4 login': %v", err)
+		logger.Errorf("Stderr: %s", stderr.String())
+		return err
+	}
+
+	logger.Infof("Stdout: %s", stdout.String())
+	return nil
+}
+
+func RunP4CommandWithEnvAndDir(command string, args []string, includeDataDir bool, dataDir string, customer string, logger *logrus.Logger) error {
+	os.Setenv("P4CONFIG", p4ConfigPath)
+	cmdArgs := make([]string, 0)
 	if includeDataDir {
 		dataFlag := filepath.Join(dataDir, customer)
 		cmdArgs = append(cmdArgs, "-d", dataFlag)
 	}
-
-	// Add the -E flag with the environment variable value
-	for key, value := range envVars {
-		cmdArgs = append(cmdArgs, "-E", fmt.Sprintf("%s=%s", key, value))
-	}
-
 	cmdArgs = append(cmdArgs, args...)
 
-	// Create the command
-	cmd := exec.Command(command, cmdArgs...)
-	cmd.Env = cmdEnv
+	// Log the full command for debugging
+	logger.Debugf("Executing P4 command: %s %v", command, cmdArgs)
 
-	// Run the command
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	cmd := exec.Command(command, cmdArgs...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Errorf("Error executing command '%s %v': %v", command, cmdArgs, err)
+		logger.Debugf("Command output: %s", string(output))
+		return err
+	}
+
+	// Log command output
+	logger.Debugf("Command output: %s", string(output))
+	return nil
 }
 
-// Sync up
-// P4SyncIT is the function that runs the sequence of P4 commands for data processing.
 func P4SyncIT(p4Command, dataDir, customer, instance string, logger *logrus.Logger) error {
-	// Read the environment variables from the config.yaml file in the root directory
-	configFile := "config.yaml"
-	configFilePath := filepath.Join(configFile)
-
-	// Load the environment variables from the config.yaml file
-	envVars := make(map[string]string)
-	configFileData, err := ioutil.ReadFile(configFilePath)
-	if err != nil {
-		return err
-	}
-	err = yaml.Unmarshal(configFileData, &envVars)
-	if err != nil {
-		return err
-	}
-
-	// Define the P4 arguments for each command
 	recArgs := []string{"rec"}
 	syncArgs := []string{"sync"}
 	resolveArgs := []string{"resolve", "-ay"}
 	customerDirPath := filepath.Join(dataDir, customer, "/...")
 
-	//p4 rec
-	//	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(recArgs, " "))
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(maskSensitiveData(recArgs), " "))
-
-	err = RunP4CommandWithEnvAndDir(p4Command, recArgs, true, dataDir, customer)
-	if err != nil {
+	// Run 'p4 rec'
+	logger.Infof("Running P4 command: %s %s", p4Command, strings.Join(recArgs, " "))
+	if err := RunP4CommandWithEnvAndDir(p4Command, recArgs, true, dataDir, customer, logger); err != nil {
 		logger.Errorf("Error running 'p4 rec': %v", err)
 		return err
 	}
 
-	// p4 sync
-	//logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(syncArgs, " "))
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(maskSensitiveData(syncArgs), " "))
-	err = RunP4CommandWithEnvAndDir(p4Command, syncArgs, true, dataDir, customer)
-	if err != nil {
+	// Run 'p4 sync'
+	logger.Infof("Running P4 command: %s %s", p4Command, strings.Join(syncArgs, " "))
+	if err := RunP4CommandWithEnvAndDir(p4Command, syncArgs, true, dataDir, customer, logger); err != nil {
 		logger.Errorf("Error running 'p4 sync': %v", err)
 		return err
 	}
 
-	// p4 resolve
-	//logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(resolveArgs, " "))
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(maskSensitiveData(resolveArgs), " "))
-	err = RunP4CommandWithEnvAndDir(p4Command, resolveArgs, true, dataDir, customer)
-	if err != nil {
+	// Run 'p4 resolve -ay'
+	logger.Infof("Running P4 command: %s %s", p4Command, strings.Join(resolveArgs, " "))
+	if err := RunP4CommandWithEnvAndDir(p4Command, resolveArgs, true, dataDir, customer, logger); err != nil {
 		logger.Errorf("Error running 'p4 resolve -ay': %v", err)
 		return err
 	}
-	////
-	//// TODO No files to submit from the default changelist.
-	//// TODO Fix Error because there is no reason to submit
-	////
-	// Construct and execute the submit command
-	submitCmdArgs := []string{
-		"submit",
-		"-d", fmt.Sprintf("Customer: %s, Instance: %s, monitoring submit", customer, instance),
-		customerDirPath,
-	}
 
-	submitCmdWithEnv := []string{} // Create a new slice to hold the -E flag environment variables
-	for key, value := range envVars {
-		submitCmdWithEnv = append(submitCmdWithEnv, "-E", fmt.Sprintf("%s=%s", key, value))
-	}
-	submitCmdWithEnv = append(submitCmdWithEnv, submitCmdArgs...) // Add the rest of the command arguments
-
-	//logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(submitCmdWithEnv, " "))
-	logger.Infof("Running P4 command: %s %s\n", p4Command, strings.Join(maskSensitiveData(submitCmdWithEnv), " "))
-
-	submitCmd := exec.Command(p4Command, submitCmdWithEnv...)
-	submitCmd.Env = os.Environ() // Use the current environment variables
-	submitCmd.Stdout = os.Stdout
-	submitCmd.Stderr = os.Stderr
-	err = submitCmd.Run()
-	if err != nil {
-		logger.Errorf("Error running 'p4 submit': %v", err)
-		return err
+	// Check for changes to submit
+	if hasChangesToSubmit(p4Command, customerDirPath, logger) {
+		// Construct and execute the 'p4 submit' command
+		submitCmdArgs := []string{
+			"submit",
+			"-d", fmt.Sprintf("Customer: %s, Instance: %s, monitoring submit", customer, instance),
+			customerDirPath,
+		}
+		logger.Infof("Running P4 command: %s submit %s", p4Command, strings.Join(submitCmdArgs, " "))
+		if err := RunP4CommandWithEnvAndDir(p4Command, submitCmdArgs, false, "", customer, logger); err != nil {
+			logger.Errorf("Error running 'p4 submit': %v", err)
+			return err
+		}
+	} else {
+		logger.Info("No changes to submit.")
 	}
 
 	logger.Infof("P4 commands executed successfully")
 	return nil
+}
+
+func hasChangesToSubmit(p4Command, customerDirPath string, logger *logrus.Logger) bool {
+	cmdArgs := []string{"opened", customerDirPath}
+	cmd := exec.Command(p4Command, cmdArgs...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Debugf("Error checking for changes: %v", err)
+		return false
+	}
+	return strings.Contains(string(output), "//")
 }
