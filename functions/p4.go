@@ -43,14 +43,19 @@ func LoadConfig() error {
 func P4Login(logger *logrus.Logger) error {
 	os.Setenv("P4CONFIG", p4ConfigPath)
 
-	if HasValidTicket(logger) {
-		return nil
+	// Check if already logged in using 'p4 login -s'
+	loginStatusCmd := exec.Command("p4", "login", "-s")
+	if err := loginStatusCmd.Run(); err == nil {
+		logger.Info("Already logged in to Perforce.")
+		return nil // Already logged in
 	}
 
+	// Handle trust if needed
 	if err := handleP4Trust(logger); err != nil {
 		return err
 	}
 
+	// Prompt for password and login
 	fmt.Print("Enter Perforce password: ")
 	password, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
@@ -114,22 +119,6 @@ func runP4Login(password string, logger *logrus.Logger) error {
 	return nil
 }
 
-// RunP4CommandWithEnvAndDir runs a p4 command with specified arguments, environment variables, and an optional data directory.
-/*func RunP4CommandWithEnvAndDir(command string, args []string, includeDataDir bool, dataDir string, customer string) error {
-	os.Setenv("P4CONFIG", p4ConfigPath)
-	cmdArgs := make([]string, 0)
-	if includeDataDir {
-		dataFlag := filepath.Join(dataDir, customer)
-		cmdArgs = append(cmdArgs, "-d", dataFlag)
-	}
-	cmdArgs = append(cmdArgs, args...)
-
-	cmd := exec.Command(command, cmdArgs...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-*/
 func RunP4CommandWithEnvAndDir(command string, args []string, includeDataDir bool, dataDir string, customer string, logger *logrus.Logger) error {
 	os.Setenv("P4CONFIG", p4ConfigPath)
 	cmdArgs := make([]string, 0)
