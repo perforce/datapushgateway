@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,10 +13,39 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// TODO Lets login and save a tickets in a respective directory using the .p4config file
+// P4Login logs into Perforce and generates a session ticket
+func P4Login(username, password, p4Port string, logger *logrus.Logger) error {
+	// Construct the p4 login command
+	cmd := exec.Command("p4", "-p", p4Port, "login", "-a")
+
+	// Create a buffer to write the password
+	var stdin bytes.Buffer
+	stdin.Write([]byte(password + "\n"))
+	cmd.Stdin = &stdin
+
+	// Capture the output
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// Run the command
+	err := cmd.Run()
+	if err != nil {
+		logger.Errorf("Error running 'p4 login': %v", err)
+		logger.Errorf("Stderr: %s", stderr.String())
+		return err
+	}
+
+	logger.Infof("Stdout: %s", stdout.String())
+	return nil
+}
+
 // TODO This package needs to be smarter.. Load the yaml to use it later and functions need to be a bit more flexiable
 // RunP4CommandWithEnvAndDir runs a p4 command with specified arguments, environment variables,
 // and an optional data directory.
 func RunP4CommandWithEnvAndDir(command string, args []string, includeDataDir bool, dataDir string, customer string) error {
+
 	// Read the environment variables from the config.yaml file in the root directory
 	configFile := "config.yaml"
 	configFilePath := filepath.Join(configFile)
