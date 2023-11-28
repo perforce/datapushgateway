@@ -17,10 +17,10 @@ DataPushGateway is especially valuable for organizations that prioritize organiz
 - [Support Status](#support-status)
 - [Overview](#overview)
 - [Technical Overview](#technical-overview)
-- [Functionality and Features](#functionality-and-features)
+- [Key Features and Functions](#key-features-and-functions)
 - [Detailed Installation Instructions](#detailed-installation-instructions)
 - [API Documentation](#api-documentation)
-- [Change Log Generation](#change-log-generation)
+- [Log Generation](#log-generation)
 
 
 ## Support Status
