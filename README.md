@@ -14,13 +14,15 @@ DataPushGateway is especially valuable for organizations that prioritize organiz
 
 
 - [DataPushGateway](#datapushgateway)
-- [Support Status](#support-status)
-- [Overview](#overview)
-- [Technical Overview](#technical-overview)
-- [Key Features and Functions](#key-features-and-functions)
-- [Detailed Installation Instructions](#detailed-installation-instructions)
-- [API Documentation](#api-documentation)
-- [Log Generation](#log-generation)
+  - [Support Status](#support-status)
+  - [Overview](#overview)
+  - [Technical Overview](#technical-overview)
+  - [Detailed Installation Instructions](#detailed-installation-instructions)
+  - [Log Generation](#log-generation)
+  - [DataPushGateway Files and Sorting Process](#datapushgateway-files-and-sorting-process)
+  - [API Documentation](#api-documentation)
+  - [Development Notes and TODO](#development-notes-and-todo)
+
 
 
 ## Support Status
@@ -52,7 +54,12 @@ DataPushGateway serves as a companion to Prometheus Pushgateway, focusing on the
 - **Data Processing and Endpoints**: Features endpoints for operational status confirmation and handling JSON and general data with basic authentication.
 - **Data Validation and Storage**: Validates customer and instance names and saves received data to the filesystem.
 - **Perforce Integration**: Synchronizes the saved data with Perforce Helix Core Server
-
+- **Server Administrators and Auditors**: 
+  - Easily locate and review configurations or system information.
+  - Monitor server health, configuration changes, and system updates.
+- **Automated Documentation**: 
+  - Streamlines documentation of server setups and changes.
+  - Facilitates better management of server environments.
 
 ## Detailed Installation Instructions
 
@@ -96,14 +103,22 @@ Before starting the DataPushGateway, you need to set up the `config.yaml` file w
         P4CONFIG: /home/datapushgateway/.p4config
 ```
 
+4. Edit .p4config file in respective directory as defined in the config.yaml
+```
+P4PORT=ssl:my_monitoring_server:1666
+P4USER=bot_HRA_instance_monitor
+P4CLIENT=bot_HRA_instance_monitor_ws
+P4TICKETS=/home/datapushgateway/p4stuff/.p4tickets
+P4TRUST=/home/datapushgateway/p4stuff/.p4trust
+```
 
-4. Ensure that other settings in `config.yaml` are correctly configured according to your environment and requirements.
+5. Ensure that other settings in `config.yaml` are correctly configured according to your environment and requirements.
 
 
 The `auth.yaml` file needs to be configured with user credentials encrypted using bcrypt. This file is used for basic authentication when accessing DataPushGateway. Follow these steps to set up the `auth.yaml` file:
 
 
-5. Generate a Bcrypt Encrypted Password:
+6. Generate a Bcrypt Encrypted Password:
 
 
    Use the `mkpasswd` binary located in the `tools` directory to create a bcrypt encrypted password. Run the following command in the terminal:
@@ -112,7 +127,7 @@ The `auth.yaml` file needs to be configured with user credentials encrypted usin
 Follow the prompts to enter and confirm your password. The command will output a bcrypt encrypted password.
 
 
-6. Configure `auth.yaml`:
+7. Configure `auth.yaml`:
 
 
 Open the `auth.yaml` file and add your username and the bcrypt encrypted password in the following format:
@@ -122,7 +137,7 @@ Open the `auth.yaml` file and add your username and the bcrypt encrypted passwor
 basic_auth_users:
   your_username: [bcrypt encrypted password]
 ```
-7. **Start DataPushGateway with Authentication and Data Directory:**
+8. **Start DataPushGateway with Authentication and Data Directory:**
 
 
    To start the DataPushGateway, use the following command, specifying the `auth.yaml` file and the data directory path:
@@ -151,6 +166,77 @@ The `--debug` flag is optional and enables detailed logging.
 ```bash
 ./datapushgateway --auth.file=auth.yaml --data=/home/datapushgateway/data-dir > datapushgateway.log 2>&1 &
 ```
+
+
+# DataPushGateway Files and Sorting Process via the JSON endpoint
+
+## Overview of `sort.yaml` Structure
+
+### File Configurations (`file_configs`)
+Each entry under `file_configs` represents a Markdown file to be generated with specific components:
+- `file_name`: Name of the Markdown file with `%INSTANCE%` as a dynamic placeholder.
+- `directory`: Directory path for file storage, supporting `%INSTANCE%` placeholder.
+- `monitor_tags`: List of tags for categorizing data into the respective file.
+
+## File Categorization Process
+
+### Dynamic Naming and Directory Paths
+- `%INSTANCE%` placeholder allows for dynamic creation of file names and directories based on the Perforce server instance.
+
+### Tag-Based Sorting
+- Incoming data is processed and categorized based on `monitor_tags`.
+- Each tag corresponds to a specific type of data or metric.
+
+## Examples of File Configurations
+
+### Instance-Specific Server Reports
+- `file_name: HRA-%INSTANCE%` 
+  - Comprehensive report for each instance including OS tests, disk alerts, server info, and Perforce configurations.
+- `directory: servers`
+  - Stored in the `servers` directory.
+
+### Support Related Information
+- `file_name: support`
+  - Gathers data like disk alerts, server configurations for support.
+- `directory: servers/%INSTANCE%`
+  - Stored in a subdirectory named after the instance under `servers`.
+
+### Detailed Configuration and System Information
+- Separate files for triggers, extensions, properties, each with specific `monitor_tags`.
+- Organized under `servers/%INSTANCE%/info`.
+
+## Documentation Format
+- Markdown files include relevant data categorized under respective `monitor_tags`.
+- Structured format for quick reference and understanding of server configurations and status.
+
+## DataPushGateway Handling via the `/data/` Endpoint
+
+### Overview of `/data/` Endpoint Functionality
+
+The `/data/` endpoint in DataPushGateway is specialized for direct Markdown data processing, primarily sourced from scripts like `report_instance_data.sh`. This feature ensures efficient handling and organization of supplementary server data within the Perforce environment.
+
+### Core Functionalities of the `/data/` Endpoint
+
+1. **Data Reception and Authentication**:
+    - Primarily handles POST requests with Markdown-formatted data.
+    - Requires basic HTTP authentication to ensure secure and authorized access.
+
+2. **Parameter Handling and Verification**:
+    - Extracts and validates `customer` and `instance` details from the query string.
+    - Ensures integrity and correctness of the provided parameters for data categorization.
+
+3. **Markdown Data Processing**:
+    - Receives and processes Markdown data from the body of the request.
+    - Efficiently stores and categorizes the data based on customer and instance specifications in the designated `dataDir`.
+
+4. **Integration with Perforce Systems**:
+    - Seamlessly synchronizes stored data with Perforce for consistent version control.
+    - Enhances traceability and management of server-related documentation within Perforce.
+
+5. **Operational Transparency and Debugging**:
+    - Comprehensive logging of the process for operational clarity and debugging purposes.
+    - Facilitates troubleshooting and maintains a clear audit trail of actions.
+
 
 # API Documentation
 
@@ -210,7 +296,7 @@ DataPushGateway offers a set of HTTP endpoints designed for managing and organiz
 - Users must provide a valid username and password as configured in the `auth.yaml` file.
 
 
-### Development Notes:
+### Development Notes and TODO :
 
 
 - **Logging and Debugging**: Utilizes `logrus` for logging with a focus on enhancing logging functionality. Debugging mode can be enabled through a flag.
