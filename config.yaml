@@ -1,2 +1,130 @@
-P4CONFIG: /home/datapushgateway/github-local/datapushgateway/p4stuff/.p4config
+#
+# - HAS_env
+# - swarm_config
+# - p4 loginhook configuration
+# - p4 loginhook extensions
+# - p4 loginhook instance
+
+applicationConfig:
+  P4CONFIG: /home/datapushgateway/github-local/datapushgateway/p4stuff/.p4config
+
+## File sorting and directory configuration
+file_configs:
+  - file_name: HRA-%INSTANCE%
+    directory: servers
+    monitor_tags:
+      - Autobot OS_test
+      - Autobot P4_test
+      - Autobot OS_disk-alerter
+      - AWS
+      - AWS metadata
+      - GCP
+      - Autobot server_info
+      - SDP Version
+      - Command-Runner Version
+      - license
+      - hostnamectl
+      - systemd
+      - disk space
+      - crontab
+      - HAS_env
+      - p4 configure
+      - p4 triggers
+      - p4 extensions
+      - p4 servers
+      - p4 property
+      - p4 ztag
+      - p4 loginhook configuration
+      - p4 loginhook extensions
+      - p4 loginhook instance
+      - "pathtofile: /etc/hosts"
+  - file_name: support
+    directory: servers/%INSTANCE%
+    monitor_tags:
+      - Autobot OS_disk-alerter
+      - p4 servers
+      - p4 configure
+      - Autobot P4_jack_ztag
+      - p4 ztag
+  - file_name: bots-report
+    directory: servers/%INSTANCE%/autobots
+    monitor_tags:
+      - Autobot P4_jack_ztag
+      - Autobot OS_server_info
+      - Autobot OS_system_check
+  - file_name: info
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - p4 triggers
+      - p4 extensions
+      - p4 servers
+      - p4 property
+      - p4 ztag
+  - file_name: triggers
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - p4 triggers
+  - file_name: extensions
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - p4 extensions
+  - file_name: property
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - p4 property
+  - file_name: crontab
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - crontab
+  - file_name: systemd
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - systemd
+  - file_name: p4configure
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - p4 configure
+  - file_name: p4servers
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - p4 servers
+  - file_name: etc-hosts
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - "pathtofile: /etc/hosts"
+  - file_name: swarm-info
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - swarm here
+      - swarm url
+      - swarm_config
+  - file_name: has-info
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - HAS_env
+  - file_name: SDP-version
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - SDP Version
+  - file_name: Command-Runner-version
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - Command-Runner Version
+  - file_name: misc
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - misc
+  - file_name: misc
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - misc
+  - file_name: disk-space
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - disk space
+  - file_name: license
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - license
+
 
