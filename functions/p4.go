@@ -15,6 +15,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type ApplicationConfig struct {
+	P4Config string `yaml:"P4CONFIG"`
+}
+
+type Config struct {
+	ApplicationConfig ApplicationConfig `yaml:"applicationConfig"`
+}
+
 var p4ConfigPath string
 
 func LoadConfig() error {
@@ -24,18 +32,17 @@ func LoadConfig() error {
 		return err
 	}
 
-	var config map[string]string
+	var config Config
 	err = yaml.Unmarshal(configData, &config)
 	if err != nil {
 		return err
 	}
 
-	path, ok := config["P4CONFIG"]
-	if !ok || path == "" {
-		return fmt.Errorf("P4CONFIG not found in config.yaml")
+	p4ConfigPath = config.ApplicationConfig.P4Config
+	if p4ConfigPath == "" {
+		return fmt.Errorf("P4CONFIG not found or is empty in config.yaml")
 	}
 
-	p4ConfigPath = path
 	// Add a debug log statement to show the loaded .p4config path
 	logger.Debugf("Loaded .p4config file: %s", p4ConfigPath)
 	return nil

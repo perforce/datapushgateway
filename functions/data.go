@@ -16,9 +16,9 @@ import (
 )
 
 // var configFile string
-var configFile = "mdconfigs/sort.yaml"
+var configFile = "config.yaml"
 
-// SortConfig represents the structure of the sort.yaml file.
+// SortConfig represents the structure of the config.yaml file.
 type SortConfig struct {
 	FileConfigs []struct {
 		FileName    string   `yaml:"file_name"`
@@ -49,7 +49,7 @@ func CreateMarkdownFiles(dataDir string, groupedData map[string][]string, sortCo
 			return fmt.Errorf("error creating directory %s: %v", dirPath, err)
 		}
 
-		// Get the items for the current file name and sort them based on the order specified in sort.yaml
+		// Get the items for the current file name and sort them based on the order specified in config.yaml
 		items := groupedData[fileName]
 
 		// Skip creating the Markdown file if there are no items for this fileName
@@ -139,26 +139,26 @@ func findIndex(slice []string, str string) int {
 	return -1
 }
 
-// LoadSortConfig reads and parses the sort.yaml file and returns the parsed data.
+// LoadSortConfig reads and parses the config.yaml file and returns the parsed data.
 func LoadSortConfig(configFile string) (*SortConfig, error) {
 	content, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read sort.yaml: %v", err)
+		return nil, fmt.Errorf("failed to read config.yaml: %v", err)
 	}
 
 	var config SortConfig
 	if err := yaml.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse sort.yaml: %v", err)
+		return nil, fmt.Errorf("failed to parse config.yaml: %v", err)
 	}
 
 	return &config, nil
 }
 
-// ProcessDataMap is a function to process the JSON data map based on the sort.yaml configuration.
+// ProcessDataMap is a function to process the JSON data map based on the config.yaml configuration.
 func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logger *logrus.Logger, customer string, instance string) {
 	sortConfig, err := LoadSortConfig(configFile)
 	if err != nil {
-		logger.Errorf("Error loading sort.yaml: %v\n", err)
+		logger.Errorf("Error loading config.yaml: %v\n", err)
 		return
 	}
 
@@ -168,7 +168,7 @@ func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logge
 		sortConfig.FileConfigs[i].Directory = strings.Replace(fileConfig.Directory, "%INSTANCE%", instance, -1)
 	}
 
-	// Create a map to group data by monitor tags specified in the sort.yaml
+	// Create a map to group data by monitor tags specified in the config.yaml
 	groupedData := make(map[string][]string)
 
 	// Iterate over the FileConfigs and keep track of the tag order
@@ -194,7 +194,7 @@ func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logge
 			continue
 		}
 
-		// Check if the monitor tag is specified in the sort.yaml
+		// Check if the monitor tag is specified in the config.yaml
 		for _, tag := range tagOrder {
 			if strings.EqualFold(tag, monitorTag) {
 				for _, fileConfig := range sortConfig.FileConfigs {
