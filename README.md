@@ -21,7 +21,7 @@ DataPushGateway is especially valuable for organizations that prioritize organiz
       - [Create a Perforce Client Workspace:](#create-a-perforce-client-workspace)
   - [Log Generation](#log-generation)
 - [DataPushGateway Files and Sorting Process via the JSON endpoint](#datapushgateway-files-and-sorting-process-via-the-json-endpoint)
-  - [Overview of `sort.yaml` Structure](#overview-of-sortyaml-structure)
+  - [Overview of `config.yaml` Structure](#overview-of-sortyaml-structure)
     - [File Configurations (`file_configs`)](#file-configurations-file_configs)
   - [File Categorization Process](#file-categorization-process)
     - [Dynamic Naming and Directory Paths](#dynamic-naming-and-directory-paths)
@@ -104,7 +104,8 @@ Before starting the DataPushGateway, you need to set up the `config.yaml` file w
 3. Set the `P4CONFIG` path in the `config.yaml` file. This path points to your `.p4config` file which contains necessary Perforce settings. Add the following line to `config.yaml`:
 
 ```
-        P4CONFIG: /home/datapushgateway/.p4config
+applicationConfig:
+  P4CONFIG: /home/datapushgateway/github-local/datapushgateway/p4stuff/.p4config
 ```
 
 4. Edit `.p4config` file in the directory defined in the config.yaml
@@ -175,7 +176,7 @@ The `--debug` flag is optional and enables detailed logging.
 
 # DataPushGateway Files and Sorting Process via the JSON endpoint
 
-## Overview of `sort.yaml` Structure
+## Overview of `config.yaml` Structure
 
 ### File Configurations (`file_configs`)
 Each entry under `file_configs` represents a Markdown file to be generated with specific components:
