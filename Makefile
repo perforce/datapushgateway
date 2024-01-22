@@ -15,6 +15,7 @@ REVISION=`git rev-parse --short HEAD`
 # Note the Version module is in a different git repo.
 MODULE="github.com/perforce/p4prometheus"
 LDFLAGS=-ldflags "-w -s -X ${MODULE}/version.Version=${VERSION} -X ${MODULE}/version.BuildDate=${BUILD_DATE} -X ${MODULE}/version.Branch=${BRANCH} -X ${MODULE}/version.Revision=${REVISION} -X ${MODULE}/version.BuildUser=${USER}"
+LDFLAGS=-ldflags "-w -s -X ${MODULE}/version.Version=${VERSION} -X ${MODULE}/version.BuildDate=${BUILD_DATE} -X ${MODULE}/version.Branch=${BRANCH} -X ${MODULE}/version.Revision=${REVISION} -X ${MODULE}/version.BuildUser=${USER}"
 
 # Builds the project
 build:
@@ -22,12 +23,13 @@ build:
 
 # Builds distribution
 dist:
-	GOOS=darwin GOARCH=amd64 go build -o bin/${BINARY}-darwin-amd64 main.go
-	GOOS=linux GOARCH=amd64 go build -o bin/${BINARY}-linux-amd64 main.go
-	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY}-windows-amd64.exe main.go
-	rm -f bin/${BINARY}*amd64*.gz
-	-chmod +x bin/${BINARY}*amd64*
-	gzip bin/${BINARY}*amd64*
+	GOOS=darwin GOARCH=amd64 go build -o bin/${BINARY}-darwin-amd64 ${LDFLAGS}
+	GOOS=darwin GOARCH=arm64 go build -o bin/${BINARY}-darwin-arm64 ${LDFLAGS}
+	GOOS=linux GOARCH=amd64 go build -o bin/${BINARY}-linux-amd64 ${LDFLAGS}
+	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY}-windows-amd64.exe ${LDFLAGS}
+	rm -f bin/${BINARY}*amd64*.gz bin/${BINARY}*arm64*.gz
+	-chmod +x bin/${BINARY}*amd64* bin/${BINARY}*arm64* 
+	gzip bin/${BINARY}*amd64* bin/${BINARY}*arm64*
 
 # Cleans our project: deletes binaries
 clean:
