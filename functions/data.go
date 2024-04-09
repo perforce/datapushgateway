@@ -15,9 +15,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// var configFile string
-var configFile = "config.yaml"
-
 // SortConfig represents the structure of the config.yaml file.
 type SortConfig struct {
 	FileConfigs []struct {
@@ -208,13 +205,13 @@ func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logge
 	}
 
 	// Now you can print the grouped data
-	Debugf("Printing Grouped Data:")
+	logger.Debugf("Printing Grouped Data:")
 	for fileName, items := range groupedData {
-		Debugf("File Name: %s\n", fileName)
+		logger.Debugf("File Name: %s\n", fileName)
 		for _, item := range items {
-			Debugf(item)
+			logger.Debugf(item)
 		}
-		Debugf("----")
+		logger.Debugf("----")
 	}
 
 	// Call the CreateMarkdownFiles function to generate Markdown files
@@ -223,7 +220,6 @@ func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logge
 		logger.Errorf("Error creating Markdown files: %v\n", err)
 	}
 
-	// Your specific processing logic goes here.
 }
 
 // contains checks if a string is present in a slice of strings.
@@ -236,7 +232,7 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Logger, dataDir string, customer string, instance string) {
+func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Logger, configFile string, dataDir string, customer string, instance string) {
 	logger.Infof("Received JSON data for customer: %s, instance: %s", customer, instance)
 
 	// Process JSON data
@@ -271,12 +267,12 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 	p4Command := "p4"
 	err := P4SyncIT(p4Command, dataDir, customer, instance, logger)
 	if err != nil {
-		// Handle the error
+		logger.Errorf("P4SyncIT error: %v", err)
 	}
 
 	logger.Infof("P4 commands executed successfully")
-
 }
+
 func SaveData(dataDir, customer, instance, data string, logger *logrus.Logger) error {
 	newpath := filepath.Join(dataDir, customer, "servers")
 	err := os.MkdirAll(newpath, os.ModePerm)

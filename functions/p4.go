@@ -3,7 +3,6 @@ package functions
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,7 +10,7 @@ import (
 	"syscall"
 
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 	"gopkg.in/yaml.v2"
 )
 
@@ -27,7 +26,7 @@ var p4ConfigPath string
 
 func LoadConfig() error {
 	configFile := "config.yaml"
-	configData, err := ioutil.ReadFile(configFile)
+	configData, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
 	}
@@ -67,7 +66,7 @@ func P4Login(logger *logrus.Logger) error {
 	fmt.Print("Enter Perforce password: ")
 
 	// Disable echoing of input characters
-	bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
+	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		return fmt.Errorf("failed to read password: %v", err)
 	}

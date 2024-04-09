@@ -33,8 +33,12 @@ func main() {
 	var (
 		authFile = kingpin.Flag(
 			"auth.file",
-			"Config file for pushgateway specifying user_basic_auth and list of user/bcrypt passwords.",
+			"Auth config file for pushgateway specifying user_basic_auth and list of user/bcrypt passwords.",
 		).String()
+		configFile = kingpin.Flag(
+			"config",
+			"Config file specifying location of p4config and various mapping locations.",
+		).Short('c').Default("config.yaml").String()
 		port = kingpin.Flag(
 			"port",
 			"Port to listen on.",
@@ -101,7 +105,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		functions.HandleJSONData(w, req, mainLogger, *dataDir, customer, instance)
+		functions.HandleJSONData(w, req, mainLogger, *configFile, *dataDir, customer, instance)
 	}))
 
 	mux.HandleFunc("/data/", ConnectionLoggingMiddleware(func(w http.ResponseWriter, req *http.Request) {
