@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -138,7 +137,7 @@ func findIndex(slice []string, str string) int {
 
 // LoadSortConfig reads and parses the config.yaml file and returns the parsed data.
 func LoadSortConfig(configFile string) (*SortConfig, error) {
-	content, err := ioutil.ReadFile(configFile)
+	content, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config.yaml: %v", err)
 	}

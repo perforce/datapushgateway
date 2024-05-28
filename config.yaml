@@ -7,6 +7,8 @@
 
 applicationConfig:
   P4CONFIG: /home/datapushgateway/github-local/datapushgateway/p4stuff/.p4config
+  # Location of p4 executable
+  p4bin: /usr/local/bin/p4
 
 ## File sorting and directory configuration
 file_configs:

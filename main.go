@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"regexp"
 
@@ -25,11 +24,10 @@ import (
 // We extract the bcrypt passwords from the config file used for prometheus pushgateway
 // A very simple yaml structure.
 
-// mainLogger is declared at the package level for the main function.
-var mainLogger *logrus.Logger
+// logger is declared at the package level for the main function.
+var logger *logrus.Logger
 
 func main() {
-	functions.LoadConfig()
 	var (
 		authFile = kingpin.Flag(
 			"auth.file",
@@ -58,23 +56,28 @@ func main() {
 	kingpin.Parse()
 
 	// Create the logger after parsing the debug flag
-	mainLogger = logrus.New()
+	logger = logrus.New()
 	if *debug {
-		mainLogger.Level = logrus.DebugLevel
-		mainLogger.Debug("Debugging is enabled")
+		logger.Level = logrus.DebugLevel
+		logger.Debug("Debugging is enabled")
 	} else {
-		mainLogger.Level = logrus.InfoLevel
+		logger.Level = logrus.InfoLevel
 	}
 	functions.SetDebugMode(*debug)
 
-	err := functions.ReadAuthFile(*authFile)
+	config, err := functions.LoadConfig(*configFile)
 	if err != nil {
-		mainLogger.Fatal(err)
+		logger.Fatalf("Error loading config file %s: %v", *configFile, err)
+	}
+
+	err = functions.ReadAuthFile(*authFile)
+	if err != nil {
+		logger.Fatal(err)
 	}
 	// Ensure Perforce login
-	if !functions.HasValidTicket(mainLogger) {
-		if err := functions.P4Login(mainLogger); err != nil {
-			mainLogger.Fatalf("Failed to log in to Perforce: %v", err)
+	if !functions.HasValidTicket(logger) {
+		if err := functions.P4Login(logger); err != nil {
+			logger.Fatalf("Failed to log in to Perforce: %v", err)
 		}
 	}
 	mux := http.NewServeMux()
@@ -82,10 +85,10 @@ func main() {
 	// Middleware for logging connection details
 	ConnectionLoggingMiddleware := func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, req *http.Request) {
-			if mainLogger.Level == logrus.DebugLevel {
-				mainLogger.Debugf("Connection from %s", req.RemoteAddr)
-				mainLogger.Debugf("URL: %s", req.URL)
-				mainLogger.Debugf("Method: %s", req.Method)
+			if logger.Level == logrus.DebugLevel {
+				logger.Debugf("Connection from %s", req.RemoteAddr)
+				logger.Debugf("URL: %s", req.URL)
+				logger.Debugf("Method: %s", req.Method)
 			}
 			next.ServeHTTP(w, req)
 		}
@@ -101,11 +104,11 @@ func main() {
 	}))
 
 	mux.HandleFunc("/json/", ConnectionLoggingMiddleware(func(w http.ResponseWriter, req *http.Request) {
-		customer, instance, err := functions.HandleHTTP(w, req, mainLogger, *dataDir)
+		customer, instance, err := functions.HandleHTTP(w, req, logger, *dataDir)
 		if err != nil {
 			return
 		}
-		functions.HandleJSONData(w, req, mainLogger, *configFile, *dataDir, customer, instance)
+		functions.HandleJSONData(w, req, logger, *configFile, *dataDir, customer, instance)
 	}))
 
 	mux.HandleFunc("/data/", ConnectionLoggingMiddleware(func(w http.ResponseWriter, req *http.Request) {
@@ -113,7 +116,7 @@ func main() {
 
 		user, pass, ok := req.BasicAuth()
 		if ok && functions.VerifyUserPass(user, pass) {
-			mainLogger.Debugf("Basic auth verified for user: %s", user)
+			logger.Debugf("Basic auth verified for user: %s", user)
 			query := req.URL.Query()
 			customer := query.Get("customer")
 			instance := query.Get("instance")
@@ -127,27 +130,26 @@ func main() {
 			// Read the body of the request
 			body, err := io.ReadAll(req.Body)
 			if err != nil {
-				mainLogger.Errorf("Error reading body: %v", err)
+				logger.Errorf("Error reading body: %v", err)
 				http.Error(w, "Cannot read body", http.StatusBadRequest)
 				return
 			}
-			mainLogger.Debugf("Request Body: %s", string(body))
+			logger.Debugf("Request Body: %s", string(body))
 
 			// Save the data received to the filesystem
-			mainLogger.Debugf("Saving data to dataDir: %s, customer: %s", *dataDir, customer)
-			err = functions.SaveData(*dataDir, customer, instance, string(body), mainLogger)
+			logger.Debugf("Saving data to dataDir: %s, customer: %s", *dataDir, customer)
+			err = functions.SaveData(*dataDir, customer, instance, string(body), logger)
 			if err != nil {
-				mainLogger.Errorf("Error saving data: %v", err)
+				logger.Errorf("Error saving data: %v", err)
 				http.Error(w, "Failed to save data", http.StatusInternalServerError)
 				return
 			}
 			w.Write([]byte("Data saved"))
 
 			// Synchronize the saved data with Perforce
-			p4Command := "p4"
-			err = functions.P4SyncIT(p4Command, *dataDir, customer, instance, mainLogger)
+			err = functions.P4SyncIT(config.ApplicationConfig.P4Bin, *dataDir, customer, instance, logger)
 			if err != nil {
-				mainLogger.Errorf("P4SyncIT error: %v", err)
+				logger.Errorf("P4SyncIT error: %v", err)
 				http.Error(w, "Error syncing data with Perforce", http.StatusInternalServerError)
 				return
 			}
@@ -168,9 +170,9 @@ func main() {
 		},
 	}
 
-	log.Printf("Starting server on %s", *port)
+	logger.Infof("Starting server on %s", *port)
 	err = srv.ListenAndServe()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 }

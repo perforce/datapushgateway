@@ -16,6 +16,7 @@ import (
 
 type ApplicationConfig struct {
 	P4Config string `yaml:"P4CONFIG"`
+	P4Bin    string `yaml:"p4bin"`
 }
 
 type Config struct {
@@ -23,35 +24,41 @@ type Config struct {
 }
 
 var p4ConfigPath string
+var p4Bin string
 
-func LoadConfig() error {
-	configFile := "config.yaml"
+func LoadConfig(configFile string) (*Config, error) {
 	configData, err := os.ReadFile(configFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var config Config
 	err = yaml.Unmarshal(configData, &config)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	p4ConfigPath = config.ApplicationConfig.P4Config
 	if p4ConfigPath == "" {
-		return fmt.Errorf("P4CONFIG not found or is empty in config.yaml")
+		return &config, fmt.Errorf("P4CONFIG not found or is empty in config.yaml")
+	}
+
+	p4Bin = config.ApplicationConfig.P4Bin
+	if p4Bin == "" {
+		p4Bin = "p4" // Assume in path
 	}
 
 	// Add a debug log statement to show the loaded .p4config path
 	logger.Debugf("Loaded .p4config file: %s", p4ConfigPath)
-	return nil
+	return &config, nil
 }
 
 func P4Login(logger *logrus.Logger) error {
 	os.Setenv("P4CONFIG", p4ConfigPath)
 
 	// Check if already logged in using 'p4 login -s'
-	loginStatusCmd := exec.Command("p4", "login", "-s")
+	logger.Debugf("Executing p4 login -s")
+	loginStatusCmd := exec.Command(p4Bin, "login", "-s")
 	if err := loginStatusCmd.Run(); err == nil {
 		logger.Info("Already logged in to Perforce.")
 		return nil // Already logged in
@@ -79,7 +86,7 @@ func P4Login(logger *logrus.Logger) error {
 
 func HasValidTicket(logger *logrus.Logger) bool {
 	os.Setenv("P4CONFIG", p4ConfigPath)
-	cmd := exec.Command("p4", "tickets")
+	cmd := exec.Command(p4Bin, "tickets")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Debugf("Error checking tickets: %s", output)
@@ -90,7 +97,7 @@ func HasValidTicket(logger *logrus.Logger) bool {
 
 func handleP4Trust(logger *logrus.Logger) error {
 	// Check if trust is already established
-	checkTrustCmd := exec.Command("p4", "trust", "-l")
+	checkTrustCmd := exec.Command(p4Bin, "trust", "-l")
 	checkOutput, checkErr := checkTrustCmd.CombinedOutput()
 	if checkErr == nil && strings.Contains(string(checkOutput), "Trust already established") {
 		logger.Info("Perforce trust already established.")
@@ -98,7 +105,7 @@ func handleP4Trust(logger *logrus.Logger) error {
 	}
 
 	// Establish trust
-	cmd := exec.Command("p4", "trust", "-y")
+	cmd := exec.Command(p4Bin, "trust", "-y")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Errorf("Error running 'p4 trust': %v", err)
@@ -110,7 +117,7 @@ func handleP4Trust(logger *logrus.Logger) error {
 }
 
 func runP4Login(password string, logger *logrus.Logger) error {
-	cmd := exec.Command("p4", "login", "-a")
+	cmd := exec.Command(p4Bin, "login", "-a")
 	var stdin bytes.Buffer
 	stdin.Write([]byte(password + "\n"))
 	cmd.Stdin = &stdin
