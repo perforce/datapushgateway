@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 
 	"datapushgateway/functions"
@@ -45,6 +46,10 @@ func main() {
 			"debug",
 			"Enable debugging.",
 		).Bool()
+		logFile = kingpin.Flag(
+			"log",
+			"Log file for output - especially if --debug is specified.",
+		).Short('l').Default("/var/log/datapushgateway.log").String()
 		dataDir = kingpin.Flag(
 			"data",
 			"Directory where to store uploaded data.",
@@ -59,11 +64,20 @@ func main() {
 	logger = logrus.New()
 	if *debug {
 		logger.Level = logrus.DebugLevel
-		logger.Debug("Debugging is enabled")
 	} else {
 		logger.Level = logrus.InfoLevel
 	}
 	functions.SetDebugMode(*debug)
+	if *logFile != "" {
+		f, err := os.OpenFile(*logFile, os.O_WRONLY|os.O_CREATE, 0755)
+		if err != nil {
+			logger.Fatalf("Error opening logfile %s: %v", *logFile, err)
+		}
+		defer f.Close()
+		logger.SetOutput(f)
+	}
+
+	logger.Debug("Debugging is enabled")
 
 	config, err := functions.LoadConfig(*configFile)
 	if err != nil {
