@@ -6,7 +6,7 @@
 # - p4 loginhook instance
 
 applicationConfig:
-  P4CONFIG: /home/datapushgateway/github-local/datapushgateway/p4stuff/.p4config
+  P4CONFIG: /opt/perforce/datapushgateway/.p4config
   # Location of p4 executable
   p4bin: /usr/local/bin/p4
 
