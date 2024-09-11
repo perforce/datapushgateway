@@ -32,7 +32,7 @@ func main() {
 		authFile = kingpin.Flag(
 			"auth.file",
 			"Auth config file for pushgateway specifying user_basic_auth and list of user/bcrypt passwords.",
-		).String()
+		).Short('a').Default("auth.yaml").String()
 		configFile = kingpin.Flag(
 			"config",
 			"Config file specifying location of p4config and various mapping locations.",
