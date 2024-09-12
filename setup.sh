@@ -26,6 +26,16 @@ run_command() {
     fi
 }
 
+# Function to back up existing files
+backup_if_exists() {
+    local file=$1
+    if [ -f "$file" ]; then
+        local backup_file="${file}.bak.$(date +%Y%m%d%H%M%S)"
+        echo "Backing up $file to $backup_file"
+        run_command "cp $file $backup_file"
+    fi
+}
+
 # Check if script is run with sudo
 if [ "$EUID" -ne 0 ]; then
     echo "Please run as root or with sudo."
@@ -52,6 +62,12 @@ fi
 # Create necessary directories
 run_command "mkdir -p ${INSTALL_DIR}"
 run_command "mkdir -p ${DATA_DIR}"
+
+# Backup files if they already exist
+backup_if_exists "${INSTALL_DIR}/auth.yaml"
+backup_if_exists "${INSTALL_DIR}/config.yaml"
+backup_if_exists "${INSTALL_DIR}/.p4config"
+backup_if_exists "${BIN_DIR}/datapushgateway"
 
 # Copy files to appropriate locations
 run_command "install -m 0755 datapushgateway ${BIN_DIR}/datapushgateway"
@@ -121,6 +137,7 @@ echo "Installation completed."
 if $DRY_RUN; then
     echo "Dry run completed. No changes were made."
 fi
+
 # If not in dry run, echo the contents of the configuration files
 if ! $DRY_RUN; then
     echo "Contents of ${INSTALL_DIR}/auth.yaml:"
