@@ -93,24 +93,24 @@ create_directory "${WORKING_INSTALL_DIR}"
 create_directory "${DATA_DIR}"
 
 # Backup files if they already exist and ask for confirmation to overwrite
-backup_if_exists "${AUTH_INSTALL_DIR}/auth.yaml"
+backup_if_exists "${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
 if [ $? -eq 0 ]; then
     # Copy auth.yaml only if user allowed overwrite
     run_command "install -m 0644 auth.yaml ${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
     # Secure the auth.yaml file by restricting permissions
     run_command "chmod 600 ${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
 else
-    echo "Continuing without overwriting ${AUTH_INSTALL_DIR}/auth.yaml"
+    echo "Continuing without overwriting ${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
 fi
 
-backup_if_exists "${CONF_INSTALL_DIR}/config.yaml"
+backup_if_exists "${CONF_INSTALL_DIR}/${CONF_FILENAME}"
 if [ $? -eq 0 ]; then
     # Copy config.yaml only if user allowed overwrite
     run_command "install -m 0644 config.yaml ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
     # Secure the config.yaml file by restricting permissions
     run_command "chmod 600 ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
 else
-    echo "Continuing without overwriting ${CONF_INSTALL_DIR}/config.yaml"
+    echo "Continuing without overwriting ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
 fi
 
 backup_if_exists "${P4CONFIG_INSTALL_DIR}/.p4config"
@@ -202,12 +202,12 @@ fi
 
 # If not in dry run, echo the contents of the configuration files
 if ! $DRY_RUN; then
-    echo "Contents of ${AUTH_INSTALL_DIR}/auth.yaml:"
-    cat "${AUTH_INSTALL_DIR}/auth.yaml"
+    echo "Contents of ${AUTH_INSTALL_DIR}/${AUTH_FILENAME}:"
+    cat "${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
     echo "------------PLEASE EDIT--------------"
 
-    echo "Contents of ${CONF_INSTALL_DIR}/config.yaml:"
-    cat "${CONF_INSTALL_DIR}/config.yaml"
+    echo "Contents of ${CONF_INSTALL_DIR}/${CONF_FILENAME}:"
+    cat "${CONF_INSTALL_DIR}/${CONF_FILENAME}"
     echo "------------PLEASE EDIT--------------"
 
     echo "Contents of ${P4CONFIG_INSTALL_DIR}/.p4config:"
