@@ -45,8 +45,8 @@ if $DRY_RUN; then
 fi
 
 # Create a system user and group if not exists (assuming perforce user exists)
-if ! id -u perforce >/dev/null 2>&1; then
-    run_command "useradd -r -s /bin/false perforce"
+if ! id -u ${SERVICE_USER} >/dev/null 2>&1; then
+    run_command "useradd -r -s /bin/bash ${SERVICE_USER}"
 fi
 
 # Create necessary directories
@@ -59,11 +59,11 @@ run_command "install -m 0644 auth.yaml ${INSTALL_DIR}/auth.yaml"
 run_command "install -m 0644 config.yaml ${INSTALL_DIR}/config.yaml"
 run_command "install -m 0644 .p4config ${INSTALL_DIR}/.p4config"
 
-# Set ownership for the files and directories to perforce or Service User
+# Set ownership for the files and directories to the Service User
+# Ensure all files in INSTALL_DIR and DATA_DIR are owned by SERVICE_USER
 run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${INSTALL_DIR}"
 run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${DATA_DIR}"
 
-# Handle service file creation directly (no run_command for here-documents)
 if $DRY_RUN; then
     echo "[DRY RUN] Creating service file at ${SERVICE_FILE} with the following content:"
     cat <<EOF
@@ -106,19 +106,32 @@ fi
 # Reload systemd to recognize the new service
 run_command "systemctl daemon-reload"
 
-# Enable and start the service
-run_command "systemctl enable datapushgateway"
-run_command "systemctl start datapushgateway"
+# Enable the service but do not start it immediately
+# run_command "systemctl enable datapushgateway"
 
 # Apply SELinux policies (if applicable)
 if selinuxenabled; then
     run_command "semanage fcontext -a -t bin_t \"${BIN_DIR}/datapushgateway\""
     run_command "semanage fcontext -a -t etc_t \"${INSTALL_DIR}(/.*)?\""
-    run_command "semanage fcontext -a -t var_lib_t \"${INSTALL_DIR}/data(/.*)?\""
+    run_command "semanage fcontext -a -t var_lib_t \"${DATA_DIR}(/.*)?\""
     run_command "restorecon -Rv ${BIN_DIR}/datapushgateway ${INSTALL_DIR}"
 fi
 
 echo "Installation completed."
 if $DRY_RUN; then
     echo "Dry run completed. No changes were made."
+fi
+# If not in dry run, echo the contents of the configuration files
+if ! $DRY_RUN; then
+    echo "Contents of ${INSTALL_DIR}/auth.yaml:"
+    cat "${INSTALL_DIR}/auth.yaml"
+    echo "------------PLEASE EDIT--------------"
+
+    echo "Contents of ${INSTALL_DIR}/config.yaml:"
+    cat "${INSTALL_DIR}/config.yaml"
+    echo "------------PLEASE EDIT--------------"
+
+    echo "Contents of ${INSTALL_DIR}/.p4config:"
+    cat "${INSTALL_DIR}/.p4config"
+    echo "------------PLEASE EDIT--------------"
 fi
