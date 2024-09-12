@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # Function to prompt for input with a default value
 prompt() {
@@ -100,6 +99,8 @@ if [ $? -eq 0 ]; then
     run_command "install -m 0644 auth.yaml ${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
     # Secure the auth.yaml file by restricting permissions
     run_command "chmod 600 ${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
+else
+    echo "Continuing without overwriting ${AUTH_INSTALL_DIR}/auth.yaml"
 fi
 
 backup_if_exists "${CONF_INSTALL_DIR}/config.yaml"
@@ -108,6 +109,8 @@ if [ $? -eq 0 ]; then
     run_command "install -m 0644 config.yaml ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
     # Secure the config.yaml file by restricting permissions
     run_command "chmod 600 ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
+else
+    echo "Continuing without overwriting ${CONF_INSTALL_DIR}/config.yaml"
 fi
 
 backup_if_exists "${P4CONFIG_INSTALL_DIR}/.p4config"
@@ -116,12 +119,16 @@ if [ $? -eq 0 ]; then
     run_command "install -m 0644 .p4config ${P4CONFIG_INSTALL_DIR}/.p4config"
     # Secure the .p4config file by restricting permissions
     run_command "chmod 600 ${P4CONFIG_INSTALL_DIR}/.p4config"
+else
+    echo "Continuing without overwriting ${P4CONFIG_INSTALL_DIR}/.p4config"
 fi
 
 backup_if_exists "${BIN_DIR}/datapushgateway"
 if [ $? -eq 0 ]; then
     # Copy binary only if user allowed overwrite
     run_command "install -m 0755 datapushgateway ${BIN_DIR}/datapushgateway"
+else
+    echo "Continuing without overwriting ${BIN_DIR}/datapushgateway"
 fi
 
 # Set ownership for the files and directories to the Service User
