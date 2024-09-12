@@ -73,29 +73,49 @@ if ! id -u ${SERVICE_USER} >/dev/null 2>&1; then
     run_command "useradd -r -s /bin/bash ${SERVICE_USER}"
 fi
 
-# Create necessary directories
-run_command "mkdir -p ${CONF_INSTALL_DIR}"
-run_command "mkdir -p ${AUTH_INSTALL_DIR}"
-run_command "mkdir -p ${P4CONFIG_INSTALL_DIR}"
-run_command "mkdir -p ${DATA_DIR}"
+# Create necessary directories and check if they were successfully created
+create_directory() {
+    local dir=$1
+    if $DRY_RUN; then
+        echo "[DRY RUN] mkdir -p $dir"
+    else
+        mkdir -p "$dir"
+        if [ ! -d "$dir" ]; then
+            echo "Failed to create $dir"
+            exit 1
+        fi
+    fi
+}
+
+create_directory "${CONF_INSTALL_DIR}"
+create_directory "${AUTH_INSTALL_DIR}"
+create_directory "${P4CONFIG_INSTALL_DIR}"
+create_directory "${WORKING_INSTALL_DIR}"
+create_directory "${DATA_DIR}"
 
 # Backup files if they already exist and ask for confirmation to overwrite
 backup_if_exists "${AUTH_INSTALL_DIR}/auth.yaml"
 if [ $? -eq 0 ]; then
     # Copy auth.yaml only if user allowed overwrite
     run_command "install -m 0644 auth.yaml ${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
+    # Secure the auth.yaml file by restricting permissions
+    run_command "chmod 600 ${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
 fi
 
 backup_if_exists "${CONF_INSTALL_DIR}/config.yaml"
 if [ $? -eq 0 ]; then
     # Copy config.yaml only if user allowed overwrite
     run_command "install -m 0644 config.yaml ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
+    # Secure the config.yaml file by restricting permissions
+    run_command "chmod 600 ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
 fi
 
 backup_if_exists "${P4CONFIG_INSTALL_DIR}/.p4config"
 if [ $? -eq 0 ]; then
     # Copy .p4config only if user allowed overwrite
     run_command "install -m 0644 .p4config ${P4CONFIG_INSTALL_DIR}/.p4config"
+    # Secure the .p4config file by restricting permissions
+    run_command "chmod 600 ${P4CONFIG_INSTALL_DIR}/.p4config"
 fi
 
 backup_if_exists "${BIN_DIR}/datapushgateway"
@@ -111,6 +131,18 @@ run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${AUTH_INSTALL_DIR}"
 run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${P4CONFIG_INSTALL_DIR}/.p4config"
 run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${DATA_DIR}"
 
+# SELinux adjustments
+if selinuxenabled; then
+    echo "Applying SELinux policies..."
+    run_command "semanage fcontext -a -t bin_t \"${BIN_DIR}/datapushgateway\"" || echo "Failed to apply SELinux policy for ${BIN_DIR}/datapushgateway"
+    run_command "semanage fcontext -a -t etc_t \"${CONF_INSTALL_DIR}(/.*)?\"" || echo "Failed to apply SELinux policy for ${CONF_INSTALL_DIR}"
+    run_command "semanage fcontext -a -t etc_t \"${AUTH_INSTALL_DIR}(/.*)?\"" || echo "Failed to apply SELinux policy for ${AUTH_INSTALL_DIR}"
+    run_command "semanage fcontext -a -t etc_t \"${P4CONFIG_INSTALL_DIR}(/.*)?\"" || echo "Failed to apply SELinux policy for ${P4CONFIG_INSTALL_DIR}"
+    run_command "semanage fcontext -a -t var_lib_t \"${DATA_DIR}(/.*)?\"" || echo "Failed to apply SELinux policy for ${DATA_DIR}"
+    run_command "restorecon -Rv ${BIN_DIR}/datapushgateway ${CONF_INSTALL_DIR} ${AUTH_INSTALL_DIR} ${P4CONFIG_INSTALL_DIR} ${DATA_DIR}" || echo "Failed to restore SELinux context"
+fi
+
+# Create systemd service file
 if $DRY_RUN; then
     echo "[DRY RUN] Creating service file at ${SERVICE_FILE} with the following content:"
     cat <<EOF
@@ -120,7 +152,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/${CONF_FILENAME} -a ${AUTH_INSTALL_DIR}/${AUTH_FILENAME} -d ${DATA_DIR}
+ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/${CONF_FILENAME} -a ${AUTH_INSTALL_DIR}/${AUTH_FILENAME} -d ${DATA_DIR} > ${WORKING_INSTALL_DIR}/datapushgateway.log 2>&1
 Restart=on-failure
 User=${SERVICE_USER}
 Group=${SERVICE_USER}
@@ -138,7 +170,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/config.yaml -a ${AUTH_INSTALL_DIR}/auth.yaml -d ${DATA_DIR} > ${WORKING_INSTALL_DIR}/datapushgateway.log 2>&1
+ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/${CONF_FILENAME} -a ${AUTH_INSTALL_DIR}/${AUTH_FILENAME} -d ${DATA_DIR} > ${WORKING_INSTALL_DIR}/datapushgateway.log 2>&1
 Restart=on-failure
 User=${SERVICE_USER}
 Group=${SERVICE_USER}
@@ -155,16 +187,6 @@ run_command "systemctl daemon-reload"
 
 # Enable the service but do not start it immediately
 # run_command "systemctl enable datapushgateway"
-
-# Apply SELinux policies (if applicable)
-if selinuxenabled; then
-    run_command "semanage fcontext -a -t bin_t \"${BIN_DIR}/datapushgateway\""
-    run_command "semanage fcontext -a -t etc_t \"${CONF_INSTALL_DIR}(/.*)?\""
-    run_command "semanage fcontext -a -t etc_t \"${AUTH_INSTALL_DIR}(/.*)?\""
-    run_command "semanage fcontext -a -t etc_t \"${P4CONFIG_INSTALL_DIR}(/.*)?\""
-    run_command "semanage fcontext -a -t var_lib_t \"${DATA_DIR}(/.*)?\""
-    run_command "restorecon -Rv ${BIN_DIR}/datapushgateway ${CONF_INSTALL_DIR} ${AUTH_INSTALL_DIR} ${P4CONFIG_INSTALL_DIR} ${DATA_DIR}"
-fi
 
 echo "Installation completed."
 if $DRY_RUN; then
