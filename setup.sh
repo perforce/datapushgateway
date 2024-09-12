@@ -159,7 +159,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/${CONF_FILENAME} -a ${AUTH_INSTALL_DIR}/${AUTH_FILENAME} -d ${DATA_DIR} > ${WORKING_INSTALL_DIR}/datapushgateway.log 2>&1
+ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/${CONF_FILENAME} -a ${AUTH_INSTALL_DIR}/${AUTH_FILENAME} -d ${DATA_DIR}
 Restart=on-failure
 User=${SERVICE_USER}
 Group=${SERVICE_USER}
@@ -177,7 +177,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/${CONF_FILENAME} -a ${AUTH_INSTALL_DIR}/${AUTH_FILENAME} -d ${DATA_DIR} > ${WORKING_INSTALL_DIR}/datapushgateway.log 2>&1
+ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/${CONF_FILENAME} -a ${AUTH_INSTALL_DIR}/${AUTH_FILENAME} -d ${DATA_DIR}
 Restart=on-failure
 User=${SERVICE_USER}
 Group=${SERVICE_USER}
