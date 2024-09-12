@@ -26,14 +26,23 @@ run_command() {
     fi
 }
 
-# Function to back up existing files
+# Function to back up existing files and confirm overwriting
 backup_if_exists() {
     local file=$1
     if [ -f "$file" ]; then
-        local backup_file="${file}.bak.$(date +%Y%m%d%H%M%S)"
-        echo "Backing up $file to $backup_file"
-        run_command "cp $file $backup_file"
+        echo "$file already exists."
+        read -p "Do you want to overwrite this file? (y/N): " overwrite
+        if [[ "$overwrite" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            local backup_file="${file}.bak.$(date +%Y%m%d%H%M%S)"
+            echo "Backing up $file to $backup_file"
+            run_command "cp $file $backup_file"
+            return 0  # Return 0 to indicate file can be overwritten
+        else
+            echo "Skipping overwrite of $file."
+            return 1  # Return 1 to indicate file will not be overwritten
+        fi
     fi
+    return 0  # Return 0 if file doesn't exist
 }
 
 # Check if script is run with sudo
@@ -43,7 +52,12 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Prompt for install directories or use defaults
-INSTALL_DIR=$(prompt "Enter installation directory" "/opt/perforce/datapushgateway")
+WORKING_INSTALL_DIR=$(prompt "Enter WorkingDirectory installation directory" "/opt/perforce/datapushgateway")
+CONF_INSTALL_DIR=$(prompt "Enter config.yaml installation directory" "/opt/perforce/datapushgateway")
+CONF_FILENAME=$(prompt "Enter name for config file" "config.yaml")
+AUTH_INSTALL_DIR=$(prompt "Enter auth.yaml installation directory" "/opt/perforce/datapushgateway")
+AUTH_FILENAME=$(prompt "Enter name for auth file" "auth.yaml")
+P4CONFIG_INSTALL_DIR=$(prompt "Enter .P4CONFIG installation directory" "/opt/perforce/datapushgateway")
 DATA_DIR=$(prompt "Enter data directory" "/opt/perforce/datapushgateway/data")
 BIN_DIR=$(prompt "Enter binary directory" "/usr/local/bin")
 SERVICE_USER=$(prompt "Service User" "perforce")
@@ -60,24 +74,41 @@ if ! id -u ${SERVICE_USER} >/dev/null 2>&1; then
 fi
 
 # Create necessary directories
-run_command "mkdir -p ${INSTALL_DIR}"
+run_command "mkdir -p ${CONF_INSTALL_DIR}"
+run_command "mkdir -p ${AUTH_INSTALL_DIR}"
+run_command "mkdir -p ${P4CONFIG_INSTALL_DIR}"
 run_command "mkdir -p ${DATA_DIR}"
 
-# Backup files if they already exist
-backup_if_exists "${INSTALL_DIR}/auth.yaml"
-backup_if_exists "${INSTALL_DIR}/config.yaml"
-backup_if_exists "${INSTALL_DIR}/.p4config"
-backup_if_exists "${BIN_DIR}/datapushgateway"
+# Backup files if they already exist and ask for confirmation to overwrite
+backup_if_exists "${AUTH_INSTALL_DIR}/auth.yaml"
+if [ $? -eq 0 ]; then
+    # Copy auth.yaml only if user allowed overwrite
+    run_command "install -m 0644 auth.yaml ${AUTH_INSTALL_DIR}/${AUTH_FILENAME}"
+fi
 
-# Copy files to appropriate locations
-run_command "install -m 0755 datapushgateway ${BIN_DIR}/datapushgateway"
-run_command "install -m 0644 auth.yaml ${INSTALL_DIR}/auth.yaml"
-run_command "install -m 0644 config.yaml ${INSTALL_DIR}/config.yaml"
-run_command "install -m 0644 .p4config ${INSTALL_DIR}/.p4config"
+backup_if_exists "${CONF_INSTALL_DIR}/config.yaml"
+if [ $? -eq 0 ]; then
+    # Copy config.yaml only if user allowed overwrite
+    run_command "install -m 0644 config.yaml ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
+fi
+
+backup_if_exists "${P4CONFIG_INSTALL_DIR}/.p4config"
+if [ $? -eq 0 ]; then
+    # Copy .p4config only if user allowed overwrite
+    run_command "install -m 0644 .p4config ${P4CONFIG_INSTALL_DIR}/.p4config"
+fi
+
+backup_if_exists "${BIN_DIR}/datapushgateway"
+if [ $? -eq 0 ]; then
+    # Copy binary only if user allowed overwrite
+    run_command "install -m 0755 datapushgateway ${BIN_DIR}/datapushgateway"
+fi
 
 # Set ownership for the files and directories to the Service User
 # Ensure all files in INSTALL_DIR and DATA_DIR are owned by SERVICE_USER
-run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${INSTALL_DIR}"
+run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${CONF_INSTALL_DIR}"
+run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${AUTH_INSTALL_DIR}"
+run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${P4CONFIG_INSTALL_DIR}/.p4config"
 run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${DATA_DIR}"
 
 if $DRY_RUN; then
@@ -89,12 +120,12 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=${BIN_DIR}/datapushgateway -c ${INSTALL_DIR}/config.yaml -a ${INSTALL_DIR}/auth.yaml -d ${DATA_DIR}
+ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/${CONF_FILENAME} -a ${AUTH_INSTALL_DIR}/${AUTH_FILENAME} -d ${DATA_DIR}
 Restart=on-failure
 User=${SERVICE_USER}
 Group=${SERVICE_USER}
-WorkingDirectory=${INSTALL_DIR}
-Environment="P4CONFIG=${INSTALL_DIR}/.p4config"
+WorkingDirectory=${WORKING_INSTALL_DIR}
+Environment="P4CONFIG=${P4CONFIG_INSTALL_DIR}/.p4config"
 
 [Install]
 WantedBy=multi-user.target
@@ -107,12 +138,12 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=${BIN_DIR}/datapushgateway -c ${INSTALL_DIR}/config.yaml -a ${INSTALL_DIR}/auth.yaml -d ${DATA_DIR}
+ExecStart=${BIN_DIR}/datapushgateway -c ${CONF_INSTALL_DIR}/config.yaml -a ${AUTH_INSTALL_DIR}/auth.yaml -d ${DATA_DIR} > ${WORKING_INSTALL_DIR}/datapushgateway.log 2>&1
 Restart=on-failure
 User=${SERVICE_USER}
 Group=${SERVICE_USER}
-WorkingDirectory=${INSTALL_DIR}
-Environment="P4CONFIG=${INSTALL_DIR}/.p4config"
+WorkingDirectory=${WORKING_INSTALL_DIR}
+Environment="P4CONFIG=${P4CONFIG_INSTALL_DIR}/.p4config"
 
 [Install]
 WantedBy=multi-user.target
@@ -128,9 +159,11 @@ run_command "systemctl daemon-reload"
 # Apply SELinux policies (if applicable)
 if selinuxenabled; then
     run_command "semanage fcontext -a -t bin_t \"${BIN_DIR}/datapushgateway\""
-    run_command "semanage fcontext -a -t etc_t \"${INSTALL_DIR}(/.*)?\""
+    run_command "semanage fcontext -a -t etc_t \"${CONF_INSTALL_DIR}(/.*)?\""
+    run_command "semanage fcontext -a -t etc_t \"${AUTH_INSTALL_DIR}(/.*)?\""
+    run_command "semanage fcontext -a -t etc_t \"${P4CONFIG_INSTALL_DIR}(/.*)?\""
     run_command "semanage fcontext -a -t var_lib_t \"${DATA_DIR}(/.*)?\""
-    run_command "restorecon -Rv ${BIN_DIR}/datapushgateway ${INSTALL_DIR}"
+    run_command "restorecon -Rv ${BIN_DIR}/datapushgateway ${CONF_INSTALL_DIR} ${AUTH_INSTALL_DIR} ${P4CONFIG_INSTALL_DIR} ${DATA_DIR}"
 fi
 
 echo "Installation completed."
@@ -140,15 +173,15 @@ fi
 
 # If not in dry run, echo the contents of the configuration files
 if ! $DRY_RUN; then
-    echo "Contents of ${INSTALL_DIR}/auth.yaml:"
-    cat "${INSTALL_DIR}/auth.yaml"
+    echo "Contents of ${AUTH_INSTALL_DIR}/auth.yaml:"
+    cat "${AUTH_INSTALL_DIR}/auth.yaml"
     echo "------------PLEASE EDIT--------------"
 
-    echo "Contents of ${INSTALL_DIR}/config.yaml:"
-    cat "${INSTALL_DIR}/config.yaml"
+    echo "Contents of ${CONF_INSTALL_DIR}/config.yaml:"
+    cat "${CONF_INSTALL_DIR}/config.yaml"
     echo "------------PLEASE EDIT--------------"
 
-    echo "Contents of ${INSTALL_DIR}/.p4config:"
-    cat "${INSTALL_DIR}/.p4config"
+    echo "Contents of ${P4CONFIG_INSTALL_DIR}/.p4config:"
+    cat "${P4CONFIG_INSTALL_DIR}/.p4config"
     echo "------------PLEASE EDIT--------------"
 fi
