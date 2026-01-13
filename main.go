@@ -22,8 +22,7 @@ import (
 // TODO: Better Logging
 // TODO: Syncing in data.go
 
-// We extract the bcrypt passwords from the config file used for prometheus pushgateway
-// A very simple yaml structure.
+// We extract the passwords from the config file used for vmauth - a very simple yaml structure.
 
 // logger is declared at the package level for the main function.
 var logger *logrus.Logger
@@ -32,8 +31,8 @@ func main() {
 	var (
 		authFile = kingpin.Flag(
 			"auth.file",
-			"Auth config file for pushgateway specifying user_basic_auth and list of user/bcrypt passwords.",
-		).Short('a').Default("auth.yaml").String()
+			"Auth config file for pushgateway specifying users with plaintext passwords in vmauth format.",
+		).String()
 		configFile = kingpin.Flag(
 			"config",
 			"Config file specifying location of p4config and various mapping locations.",

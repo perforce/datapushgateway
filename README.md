@@ -3,7 +3,6 @@
 
 # DataPushGateway
 
-
 DataPushGateway is an advanced integration tool designed for managing and organizing supplementary data within Perforce server environments. It primarily functions by sorting and structuring data provided by external tools such as `command-runner` or `report_instance_data.sh`, which are integral to the [p4prometheus](https://github.com/perforce/p4prometheus) suite. This tool is key in organizing and presenting data in a coherent format, especially Markdown (MD) files, and stores them within a Perforce server, thereby aiding in tracking changes within the Helix Core server ecosystem.
 
 The tool streamlines the process of consolidating server activities and configurations, making it a vital component for efficient data management in Perforce server ecosystems. Its integration with Helix Core versioning control software significantly enhances its capability to handle version-controlled data.
@@ -21,7 +20,7 @@ DataPushGateway is especially valuable for organizations that prioritize organiz
       - [Create a Perforce Client Workspace:](#create-a-perforce-client-workspace)
   - [Log Generation](#log-generation)
 - [DataPushGateway Files and Sorting Process via the JSON endpoint](#datapushgateway-files-and-sorting-process-via-the-json-endpoint)
-  - [Overview of `config.yaml` Structure](#overview-of-sortyaml-structure)
+  - [Overview of `config.yaml` Structure](#overview-of-configyaml-structure)
     - [File Configurations (`file_configs`)](#file-configurations-file_configs)
   - [File Categorization Process](#file-categorization-process)
     - [Dynamic Naming and Directory Paths](#dynamic-naming-and-directory-paths)
@@ -121,29 +120,23 @@ P4TRUST=/home/datapushgateway/p4stuff/.p4trust
 5. Ensure that other settings in `config.yaml` are correctly configured according to your environment and requirements.
 
 
-The `auth.yaml` file needs to be configured with user credentials encrypted using bcrypt. This file is used for basic authentication when accessing DataPushGateway. Follow these steps to set up the `auth.yaml` file:
+6. Configure `auth.yaml`:
 
 
-6. Generate a Bcrypt Encrypted Password:
+The `auth.yaml` file uses the [vmauth](https://docs.victoriametrics.com/vmauth.html) configuration format (previously it used the Prometheus Pushgateway format). Configure it with user credentials for basic authentication when accessing DataPushGateway.
 
-
-   Use the `mkpasswd` binary located in the `tools` directory to create a bcrypt encrypted password. Run the following command in the terminal:
-
-
-Follow the prompts to enter and confirm your password. The command will output a bcrypt encrypted password.
-
-
-7. Configure `auth.yaml`:
-
-
-Open the `auth.yaml` file and add your username and the bcrypt encrypted password in the following format:
+Open the `auth.yaml` file and add your users in the following format:
 
 
 ```yaml
-basic_auth_users:
-  your_username: [bcrypt encrypted password]
+users:
+  - username: your_username
+    password: your_password
+    url_prefix: http://localhost:9092
 ```
-8. **Start DataPushGateway with Authentication and Data Directory:**
+
+**Note:** The `auth.yaml` file contains plaintext passwords. Ensure file permissions are restrictive (e.g., `chmod 600 auth.yaml`).
+7. **Start DataPushGateway with Authentication and Data Directory:**
 
 
    To start the DataPushGateway, use the following command, specifying the `auth.yaml` file and the data directory path:

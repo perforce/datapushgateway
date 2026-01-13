@@ -1,3 +1,5 @@
+// Tool to generate bcrypt password hashes for use in pushgateway format basic auth config files.
+// This has been replaced by the vmaught format config file in the vmauth project, but is left here for posterity.
 package main
 
 import (

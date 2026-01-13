@@ -8,25 +8,27 @@ import (
 	"regexp"
 
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v2"
 )
 
-var usersPasswords = map[string][]byte{}
+type User struct {
+	Username  string `yaml:"username"`
+	Password  string `yaml:"password"`
+	URLPrefix string `yaml:"url_prefix"`
+}
 
 type AuthFile struct {
-	Users map[string]string `yaml:"basic_auth_users"`
+	Users []User `yaml:"users"`
 }
+
+var usersPasswords = map[string]string{}
 
 func VerifyUserPass(username, password string) bool {
 	wantPass, hasUser := usersPasswords[username]
 	if !hasUser {
 		return false
 	}
-	if cmperr := bcrypt.CompareHashAndPassword(wantPass, []byte(password)); cmperr == nil {
-		return true
-	}
-	return false
+	return wantPass == password
 }
 
 func ReadAuthFile(fname string) error {
@@ -35,14 +37,14 @@ func ReadAuthFile(fname string) error {
 		log.Fatal(err)
 	}
 
-	users := AuthFile{}
-	err = yaml.Unmarshal(yfile, &users)
+	authFile := AuthFile{}
+	err = yaml.Unmarshal(yfile, &authFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for k, v := range users.Users {
-		usersPasswords[k] = []byte(v)
+	for _, user := range authFile.Users {
+		usersPasswords[user.Username] = user.Password
 	}
 	return nil
 }

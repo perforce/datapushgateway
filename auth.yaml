@@ -1,2 +1,7 @@
-basic_auth_users:
-  test: $2a$10$B0wcP6E/.q.vqHM6Yb/al.qeqYZkugkd/hxrtBw4zq4DV32Xgxabi
+users:
+  - username: test
+    password: test
+    url_prefix: http://localhost:9092
+  - username: up360
+    password: lQUib06ITdo5DaV5
+    url_prefix: http://localhost:8428
