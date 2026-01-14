@@ -60,7 +60,7 @@ func P4Login(logger *logrus.Logger) error {
 	logger.Debugf("Executing p4 login -s")
 	loginStatusCmd := exec.Command(p4Bin, "login", "-s")
 	if err := loginStatusCmd.Run(); err == nil {
-		logger.Info("Already logged in to Perforce.")
+		logger.Debug("Already logged in to Perforce.")
 		return nil // Already logged in
 	}
 
@@ -100,7 +100,7 @@ func handleP4Trust(logger *logrus.Logger) error {
 	checkTrustCmd := exec.Command(p4Bin, "trust", "-l")
 	checkOutput, checkErr := checkTrustCmd.CombinedOutput()
 	if checkErr == nil && strings.Contains(string(checkOutput), "Trust already established") {
-		logger.Info("Perforce trust already established.")
+		logger.Debug("Perforce trust already established.")
 		return nil // Trust is already established, no need to proceed further
 	}
 
@@ -112,7 +112,7 @@ func handleP4Trust(logger *logrus.Logger) error {
 		logger.Errorf("Output: %s", output)
 		return err
 	}
-	logger.Infof("p4 trust output: %s", output)
+	logger.Debugf("p4 trust output: %s", output)
 	return nil
 }
 
@@ -169,21 +169,21 @@ func P4SyncIT(p4Command, dataDir, customer, instance string, logger *logrus.Logg
 	customerDirPath := filepath.Join(dataDir, customer, "/...")
 
 	// Run 'p4 rec'
-	logger.Infof("Running P4 command: %s %s", p4Command, strings.Join(recArgs, " "))
+	logger.Debugf("Running P4 command: %s %s", p4Command, strings.Join(recArgs, " "))
 	if err := RunP4CommandWithEnvAndDir(p4Command, recArgs, true, dataDir, customer, logger); err != nil {
 		logger.Errorf("Error running 'p4 rec': %v", err)
 		return err
 	}
 
 	// Run 'p4 sync'
-	logger.Infof("Running P4 command: %s %s", p4Command, strings.Join(syncArgs, " "))
+	logger.Debugf("Running P4 command: %s %s", p4Command, strings.Join(syncArgs, " "))
 	if err := RunP4CommandWithEnvAndDir(p4Command, syncArgs, true, dataDir, customer, logger); err != nil {
 		logger.Errorf("Error running 'p4 sync': %v", err)
 		return err
 	}
 
 	// Run 'p4 resolve -ay'
-	logger.Infof("Running P4 command: %s %s", p4Command, strings.Join(resolveArgs, " "))
+	logger.Debugf("Running P4 command: %s %s", p4Command, strings.Join(resolveArgs, " "))
 	if err := RunP4CommandWithEnvAndDir(p4Command, resolveArgs, true, dataDir, customer, logger); err != nil {
 		logger.Errorf("Error running 'p4 resolve -ay': %v", err)
 		return err
@@ -197,16 +197,17 @@ func P4SyncIT(p4Command, dataDir, customer, instance string, logger *logrus.Logg
 			"-d", fmt.Sprintf("Customer: %s, Instance: %s, monitoring submit", customer, instance),
 			customerDirPath,
 		}
-		logger.Infof("Running P4 command: %s submit %s", p4Command, strings.Join(submitCmdArgs, " "))
+		logger.Debugf("Running P4 command: %s submit %s", p4Command, strings.Join(submitCmdArgs, " "))
 		if err := RunP4CommandWithEnvAndDir(p4Command, submitCmdArgs, false, "", customer, logger); err != nil {
 			logger.Errorf("Error running 'p4 submit': %v", err)
 			return err
 		}
+		logger.Infof("Customer: %s, Instance: %s, monitoring submit", customer, instance)
 	} else {
-		logger.Info("No changes to submit.")
+		logger.Debug("No changes to submit.")
 	}
 
-	logger.Infof("P4 commands executed successfully")
+	logger.Debugf("P4 commands executed successfully")
 	return nil
 }
 

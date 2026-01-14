@@ -1,14 +1,12 @@
 ![Support](https://img.shields.io/badge/Support-Community-yellow.svg)
 
-
 # DataPushGateway
 
-DataPushGateway is an advanced integration tool designed for managing and organizing supplementary data within Perforce server environments. It primarily functions by sorting and structuring data provided by external tools such as `command-runner` or `report_instance_data.sh`, which are integral to the [p4prometheus](https://github.com/perforce/p4prometheus) suite. This tool is key in organizing and presenting data in a coherent format, especially Markdown (MD) files, and stores them within a Perforce server, thereby aiding in tracking changes within the Helix Core server ecosystem.
+DataPushGateway is an advanced integration tool designed for managing and organizing supplementary data within Perforce server environments. It primarily works by sorting and structuring data provided by external tools such as `command-runner` or `report_instance_data.sh`, which are integral to the [p4prometheus](https://github.com/perforce/p4prometheus) suite. This tool is key in organizing and presenting data in a coherent format, especially Markdown (MD) files, and stores them within a Perforce server, thereby aiding in tracking changes within the Helix Core server ecosystem.
 
 The tool streamlines the process of consolidating server activities and configurations, making it a vital component for efficient data management in Perforce server ecosystems. Its integration with Helix Core versioning control software significantly enhances its capability to handle version-controlled data.
 
 DataPushGateway is especially valuable for organizations that prioritize organized, well-documented server data, transforming raw supplementary data into structured documentation for easy access and comprehension by server administrators and auditors.
-
 
 - [DataPushGateway](#datapushgateway)
   - [Support Status](#support-status)
@@ -16,9 +14,8 @@ DataPushGateway is especially valuable for organizations that prioritize organiz
   - [Technical Overview](#technical-overview)
     - [Key Features and Functions:](#key-features-and-functions)
   - [Detailed Installation Instructions](#detailed-installation-instructions)
-      - [Create a DataPushGateway Bot User:](#create-a-datapushgateway-bot-user)
-      - [Create a Perforce Client Workspace:](#create-a-perforce-client-workspace)
-  - [Log Generation](#log-generation)
+    - [Create a DataPushGateway Bot User:](#create-a-datapushgateway-bot-user)
+    - [Create a Perforce Client Workspace:](#create-a-perforce-client-workspace)
 - [DataPushGateway Files and Sorting Process via the JSON endpoint](#datapushgateway-files-and-sorting-process-via-the-json-endpoint)
   - [Overview of `config.yaml` Structure](#overview-of-configyaml-structure)
     - [File Configurations (`file_configs`)](#file-configurations-file_configs)
@@ -33,16 +30,14 @@ DataPushGateway is especially valuable for organizations that prioritize organiz
   - [DataPushGateway Handling via the `/data/` Endpoint](#datapushgateway-handling-via-the-data-endpoint)
     - [Overview of `/data/` Endpoint Functionality](#overview-of-data-endpoint-functionality)
     - [Core Functionalities of the `/data/` Endpoint](#core-functionalities-of-the-data-endpoint)
-- [API Documentation](#api-documentation)
-  - [Endpoints](#endpoints)
-    - [1. Home Endpoint](#1-home-endpoint)
-    - [2. JSON Data Handling Endpoint](#2-json-data-handling-endpoint)
-    - [3. Data Submission and Synchronization Endpoint](#3-data-submission-and-synchronization-endpoint)
-  - [Authentication](#authentication)
-    - [Development Notes and TODO :](#development-notes-and-todo-)
+  - [API Documentation](#api-documentation)
+    - [Endpoints](#endpoints)
+      - [1. Home Endpoint](#1-home-endpoint)
+      - [2. JSON Data Handling Endpoint](#2-json-data-handling-endpoint)
+      - [3. Data Submission and Synchronization Endpoint](#3-data-submission-and-synchronization-endpoint)
+    - [Authentication](#authentication)
+    - [Development Notes and TODO:](#development-notes-and-todo)
     - [TODO](#todo)
-
-
 
 ## Support Status
 
@@ -75,13 +70,14 @@ DataPushGateway serves as a companion to Prometheus Pushgateway, focusing on the
 
 ## Detailed Installation Instructions
 
-#### Create a DataPushGateway Bot User:
+### Create a DataPushGateway Bot User:
 
 1. Create a new user (e.g., `bot_HRA_instance_monitor`) on your Perforce server for DataPushGateway to use. This user will be responsible for submitting changes.
     This user should be part of a user group with the Timeout set to Unlimited
+
 2. Ensure this user/group has the necessary permissions to create and submit changes to the depot.
 
-#### Create a Perforce Client Workspace:
+### Create a Perforce Client Workspace:
 
 1. Set up a Perforce client workspace for the bot user. Here’s an example client specification:
 
@@ -119,14 +115,11 @@ P4TRUST=/home/datapushgateway/p4stuff/.p4trust
 
 5. Ensure that other settings in `config.yaml` are correctly configured according to your environment and requirements.
 
-
 6. Configure `auth.yaml`:
 
+The `auth.yaml` file uses the [vmauth](https://docs.victoriametrics.com/vmauth.html) configuration format (previously it used the Prometheus Pushgateway format which was encrypted with `bcrypt`). Configure it with user credentials for basic authentication when accessing DataPushGateway.
 
-The `auth.yaml` file uses the [vmauth](https://docs.victoriametrics.com/vmauth.html) configuration format (previously it used the Prometheus Pushgateway format). Configure it with user credentials for basic authentication when accessing DataPushGateway.
-
-Open the `auth.yaml` file and add your users in the following format:
-
+Open the `auth.yaml` (For location, see `systemctl cat vmauth.service`) file and add your users in the following format (see HRA Procedures for more info):
 
 ```yaml
 users:
@@ -136,35 +129,62 @@ users:
 ```
 
 **Note:** The `auth.yaml` file contains plaintext passwords. Ensure file permissions are restrictive (e.g., `chmod 600 auth.yaml`).
-7. **Start DataPushGateway with Authentication and Data Directory:**
 
+7. **Setup appropriate service and check SELinux settings:**
 
-   To start the DataPushGateway, use the following command, specifying the `auth.yaml` file and the data directory path:
-
-```bash
-./datapushgateway --auth.file=auth.yaml --data=/home/datapushgateway/data-dir
-```
-
-
-The `--debug` flag is optional and enables detailed logging.
-
-
-   When you run DataPushGateway for the first time, the tool automatically manages the login process for the bot user (`bot_HRA_instance_monitor`). This includes handling passwords, tickets, and trusts as needed to ensure the user has valid credentials and permissions to submit changes to the depot.
-
-
-   If the bot user's password is required during this process, DataPushGateway will prompt for it. This step is crucial for verifying that the bot user can access the depot and has the necessary permissions to submit changes.
-
-
-   After this initial setup, DataPushGateway should operate autonomously, handling subsequent logins and permissions without manual intervention.
-
-
-
-## Log Generation
-
+It is best to run as a service to ensure auto-start.
 
 ```bash
-./datapushgateway --auth.file=auth.yaml --data=/home/datapushgateway/data-dir > datapushgateway.log 2>&1 &
+sudo su -
+cat <<EOF > /etc/systemd/system/datapushgateway.service
+[Unit]
+Description=Data Push Gateway Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/datapushgateway -c /p4/common/config/datapushgateway_config.yaml --log /var/log/datapushgateway/datapushgateway.log --auth.file /etc/prometheus/v>
+Restart=on-failure
+User=perforce
+Group=perforce
+WorkingDirectory=/opt/perforce/datapushgateway
+Environment="P4CONFIG=/p4/instance_data/.p4config"
+
+[Install]
+WantedBy=multi-user.target
+EOF
 ```
+
+Note the above sets the log file to standard `/var/log` directory. Because of SELinux requirements it puts it in a sub-directory. Run the following:
+
+```bash
+semanage fcontext -a -t bin_t /usr/local/bin/datapushgateway
+restorecon -vF /usr/local/bin/datapushgateway
+
+mkdir -p /var/log/datapushgateway
+chown perforce: /var/log/datapushgateway
+
+semanage fcontext -a -t var_log_t "/var/log/datapushgateway(/.*)?"
+restorecon -Rv "/var/log/datapushgateway"
+```
+
+8. **Start DataPushGateway service:**
+
+To start the DataPushGateway, use the following command, specifying the `auth.yaml` file and the data directory path:
+
+```bash
+sudo systemctl start datapushgateway
+```
+
+The `--debug` flag is optional and can be added to the systemd service file to enable detailed logging.
+
+It is usually best to perform `p4 login` and `p4 trust -y` manually before starting the service.
+
+When you run DataPushGateway for the first time (manually), the tool automatically manages the login process for the bot user (`bot_HRA_instance_monitor`). This includes handling passwords, tickets, and trusts as needed to ensure the user has valid credentials and permissions to submit changes to the depot.
+
+If the bot user's password is required during this process, DataPushGateway will prompt for it. This step is crucial for verifying that the bot user can access the depot and has the necessary permissions to submit changes.
+
+After this initial setup, DataPushGateway should operate autonomously, handling subsequent logins and permissions without manual intervention.
 
 
 # DataPushGateway Files and Sorting Process via the JSON endpoint
@@ -236,18 +256,13 @@ The `/data/` endpoint in DataPushGateway is specialized for direct Markdown data
     - Comprehensive logging of the process for operational clarity and debugging purposes.
     - Facilitates troubleshooting and maintains a clear audit trail of actions.
 
-
-# API Documentation
-
+## API Documentation
 
 DataPushGateway offers a set of HTTP endpoints designed for managing and organizing supplementary data in Perforce server environments. These endpoints facilitate the reception, processing, and synchronization of data with Perforce.
 
+### Endpoints
 
-## Endpoints
-
-
-### 1. Home Endpoint
-
+#### 1. Home Endpoint
 
 - **URL**: `/`
 - **Method**: `GET`
@@ -255,9 +270,7 @@ DataPushGateway offers a set of HTTP endpoints designed for managing and organiz
 - **Response**:
   - `200 OK` - Returns "Data PushGateway\n" upon successful connection.
 
-
-### 2. JSON Data Handling Endpoint
-
+#### 2. JSON Data Handling Endpoint
 
 - **URL**: `/json/`
 - **Method**: `POST`
@@ -269,9 +282,7 @@ DataPushGateway offers a set of HTTP endpoints designed for managing and organiz
   - `200 OK` - Data processed successfully.
   - Error messages and status codes for various failures.
 
-
-### 3. Data Submission and Synchronization Endpoint
-
+#### 3. Data Submission and Synchronization Endpoint
 
 - **URL**: `/data/`
 - **Method**: `POST`
@@ -287,16 +298,12 @@ DataPushGateway offers a set of HTTP endpoints designed for managing and organiz
   - `401 Unauthorized` - Authentication failure.
   - `500 Internal Server Error` - Failures in saving or syncing data.
 
-
-## Authentication
-
+### Authentication
 
 - Both the `/json/` and `/data/` endpoints require basic HTTP authentication.
 - Users must provide a valid username and password as configured in the `auth.yaml` file.
 
-
-### Development Notes and TODO :
-
+### Development Notes and TODO:
 
 - **Logging and Debugging**: Utilizes `logrus` for logging with a focus on enhancing logging functionality. Debugging mode can be enabled through a flag.
 - **Error Handling**: Comprehensive error handling around data reading, saving, and syncing with Perforce.
@@ -304,6 +311,5 @@ DataPushGateway offers a set of HTTP endpoints designed for managing and organiz
 
 ### TODO
 - Better User management
- - submit on directory attached to user
+- submit on directory attached to user
 - Bug with directory structure and file names seems to run over each other
-

@@ -19,7 +19,6 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-// TODO: Better Logging
 // TODO: Syncing in data.go
 
 // We extract the passwords from the config file used for vmauth - a very simple yaml structure.
@@ -48,7 +47,7 @@ func main() {
 		logFile = kingpin.Flag(
 			"log",
 			"Log file for output - especially if --debug is specified.",
-		).Short('l').Default("/var/log/datapushgateway.log").String()
+		).Short('l').Default("/var/log/datapushgateway/datapushgateway.log").String()
 		dataDir = kingpin.Flag(
 			"data",
 			"Directory where to store uploaded data.",
@@ -150,7 +149,7 @@ func main() {
 			logger.Debugf("Request Body: %s", string(body))
 
 			// Save the data received to the filesystem
-			logger.Debugf("Saving data to dataDir: %s, customer: %s", *dataDir, customer)
+			logger.Infof("Saving data to dataDir: %s, customer: %s", *dataDir, customer)
 			err = functions.SaveData(*dataDir, customer, instance, string(body), logger)
 			if err != nil {
 				logger.Errorf("Error saving data: %v", err)
