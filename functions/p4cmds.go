@@ -19,8 +19,23 @@ type ApplicationConfig struct {
 	P4Bin    string `yaml:"p4bin"`
 }
 
+// SlackConfig specifies how OOM alert notifications should be posted to Slack.
+type SlackConfig struct {
+	Enabled    bool   `yaml:"enabled"`
+	Mode       string `yaml:"mode"` // "bot" for chat.postMessage, otherwise incoming webhook
+	WebhookURL string `yaml:"webhook_url"`
+	BotToken   string `yaml:"bot_token"`
+	ChannelID  string `yaml:"channel_id"`
+}
+
+// NotificationsConfig holds outbound alert notification settings.
+type NotificationsConfig struct {
+	Slack SlackConfig `yaml:"slack"`
+}
+
 type Config struct {
-	ApplicationConfig ApplicationConfig `yaml:"applicationConfig"`
+	ApplicationConfig ApplicationConfig   `yaml:"applicationConfig"`
+	Notifications     NotificationsConfig `yaml:"notifications"`
 }
 
 var p4ConfigPath string

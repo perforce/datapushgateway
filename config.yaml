@@ -10,6 +10,17 @@ applicationConfig:
   # Location of p4 executable
   p4bin: /usr/local/bin/p4
 
+# ----------------------
+# notifications: Optional outbound alerts for OOM kill candidates and actual kills.
+# Set mode to "bot" to use chat.postMessage; otherwise use an incoming webhook.
+notifications:
+  slack:
+    enabled: true
+    mode: "webhook"
+    webhook_url: "https://hooks.slack.com/services/..."
+    # bot_token: "xoxb-..."
+    # channel_id: "C0123456789"
+
 ## File sorting and directory configuration
 file_configs:
   - file_name: HRA-%INSTANCE%

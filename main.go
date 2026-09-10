@@ -123,6 +123,10 @@ func main() {
 		functions.HandleJSONData(w, req, logger, *configFile, *dataDir, customer, instance)
 	}))
 
+	mux.HandleFunc("/alerts/", ConnectionLoggingMiddleware(func(w http.ResponseWriter, req *http.Request) {
+		functions.HandleAlerts(w, req, logger, config)
+	}))
+
 	mux.HandleFunc("/data/", ConnectionLoggingMiddleware(func(w http.ResponseWriter, req *http.Request) {
 		var validName = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
