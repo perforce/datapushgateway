@@ -267,6 +267,8 @@ func HandleJSONData(w http.ResponseWriter, req *http.Request, logger *logrus.Log
 	err := P4SyncIT(p4Command, dataDir, customer, instance, logger)
 	if err != nil {
 		logger.Errorf("P4SyncIT error: %v", err)
+		http.Error(w, "Error syncing data with Perforce", http.StatusInternalServerError)
+		return
 	}
 
 	logger.Infof("P4 commands executed successfully")

@@ -141,7 +141,7 @@ run_command "chown -R ${SERVICE_USER}:${SERVICE_USER} ${DATA_DIR}"
 # SELinux adjustments
 if selinuxenabled; then
     echo "Applying SELinux policies..."
-    run_command "semanage fcontext -a -t bin_t \"${BIN_DIR}/datapushgateway\"" || echo "Failed to apply SELinux policy for ${BIN_DIR}/datapushgateway"
+    run_command "\"${BIN_DIR}/datapushgateway\"" || echo "Failed to apply SELinux policy for ${BIN_DIR}/datapushgateway"
     run_command "semanage fcontext -a -t etc_t \"${CONF_INSTALL_DIR}(/.*)?\"" || echo "Failed to apply SELinux policy for ${CONF_INSTALL_DIR}"
     run_command "semanage fcontext -a -t etc_t \"${AUTH_INSTALL_DIR}(/.*)?\"" || echo "Failed to apply SELinux policy for ${AUTH_INSTALL_DIR}"
     run_command "semanage fcontext -a -t etc_t \"${P4CONFIG_INSTALL_DIR}(/.*)?\"" || echo "Failed to apply SELinux policy for ${P4CONFIG_INSTALL_DIR}"

@@ -168,7 +168,7 @@ func RunP4CommandWithEnvAndDir(command string, args []string, includeDataDir boo
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Errorf("Error executing command '%s %v': %v", command, cmdArgs, err)
-		logger.Debugf("Command output: %s", string(output))
+		logger.Errorf("Command output: %s", string(output))
 		return err
 	}
 
@@ -205,7 +205,11 @@ func P4SyncIT(p4Command, dataDir, customer, instance string, logger *logrus.Logg
 	}
 
 	// Check for changes to submit
-	if hasChangesToSubmit(p4Command, customerDirPath, logger) {
+	hasChanges, err := hasChangesToSubmit(p4Command, customerDirPath, logger)
+	if err != nil {
+		return err
+	}
+	if hasChanges {
 		// Construct and execute the 'p4 submit' command
 		submitCmdArgs := []string{
 			"submit",
@@ -226,13 +230,14 @@ func P4SyncIT(p4Command, dataDir, customer, instance string, logger *logrus.Logg
 	return nil
 }
 
-func hasChangesToSubmit(p4Command, customerDirPath string, logger *logrus.Logger) bool {
+func hasChangesToSubmit(p4Command, customerDirPath string, logger *logrus.Logger) (bool, error) {
 	cmdArgs := []string{"opened", customerDirPath}
 	cmd := exec.Command(p4Command, cmdArgs...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		logger.Debugf("Error checking for changes: %v", err)
-		return false
+		logger.Errorf("Error checking for changes: %v", err)
+		logger.Errorf("Command output: %s", string(output))
+		return false, err
 	}
-	return strings.Contains(string(output), "//")
+	return strings.Contains(string(output), "//"), nil
 }

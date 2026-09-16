@@ -67,7 +67,7 @@ func main() {
 	}
 	functions.SetDebugMode(*debug)
 	if *logFile != "" {
-		f, err := os.OpenFile(*logFile, os.O_WRONLY|os.O_CREATE, 0755)
+		f, err := os.OpenFile(*logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0755)
 		if err != nil {
 			logger.Fatalf("Error opening logfile %s: %v", *logFile, err)
 		}
@@ -160,7 +160,6 @@ func main() {
 				http.Error(w, "Failed to save data", http.StatusInternalServerError)
 				return
 			}
-			w.Write([]byte("Data saved"))
 
 			// Synchronize the saved data with Perforce
 			err = functions.P4SyncIT(config.ApplicationConfig.P4Bin, *dataDir, customer, instance, logger)
@@ -169,7 +168,7 @@ func main() {
 				http.Error(w, "Error syncing data with Perforce", http.StatusInternalServerError)
 				return
 			}
-			w.Write([]byte("Data synced with Perforce"))
+			w.Write([]byte("Data saved and synced with Perforce"))
 		} else {
 			// Prompt for basic auth if verification fails
 			w.Header().Set("WWW-Authenticate", `Basic realm="api"`)
