@@ -191,8 +191,10 @@ func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logge
 		}
 
 		// Check if the monitor tag is specified in the config.yaml
+		matched := false
 		for _, tag := range tagOrder {
 			if strings.EqualFold(tag, monitorTag) {
+				matched = true
 				for _, fileConfig := range sortConfig.FileConfigs {
 					if contains(fileConfig.MonitorTags, tag) {
 						groupedData[fileConfig.FileName] = append(groupedData[fileConfig.FileName], value)
@@ -200,6 +202,9 @@ func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logge
 				}
 				break
 			}
+		}
+		if !matched {
+			logger.Infof("No file configuration for monitor tag %q; item %s was not processed", monitorTag, key)
 		}
 	}
 
