@@ -41,7 +41,7 @@ file_configs:
       - disk space
       - crontab
       - HAS_env
-      - p4 configure
+      - p4 configure show
       - p4 triggers
       - p4 extensions
       - p4 servers
@@ -56,7 +56,7 @@ file_configs:
     monitor_tags:
       - Autobot OS_disk-alerter
       - p4 servers
-      - p4 configure
+      - p4 configure show
       - Autobot P4_jack_ztag
       - p4 ztag
   - file_name: bots-report
@@ -96,7 +96,7 @@ file_configs:
   - file_name: p4configure
     directory: servers/%INSTANCE%/info
     monitor_tags:
-      - p4 configure
+      - p4 configure show
   - file_name: p4servers
     directory: servers/%INSTANCE%/info
     monitor_tags:
@@ -131,6 +131,9 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - misc
+  - file_name: unmatched
+    directory: servers/%INSTANCE%/info
+    unmatched_monitor_tags: true
   - file_name: disk-space
     directory: servers/%INSTANCE%/info
     monitor_tags:

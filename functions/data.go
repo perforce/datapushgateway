@@ -17,9 +17,10 @@ import (
 // SortConfig represents the structure of the config.yaml file.
 type SortConfig struct {
 	FileConfigs []struct {
-		FileName    string   `yaml:"file_name"`
-		Directory   string   `yaml:"directory"`
-		MonitorTags []string `yaml:"monitor_tags"`
+		FileName             string   `yaml:"file_name"`
+		Directory            string   `yaml:"directory"`
+		MonitorTags          []string `yaml:"monitor_tags"`
+		UnmatchedMonitorTags bool     `yaml:"unmatched_monitor_tags"`
 	} `yaml:"file_configs"`
 }
 
@@ -204,7 +205,18 @@ func ProcessDataMap(dataMap map[string]string, configFile, dataDir string, logge
 			}
 		}
 		if !matched {
-			logger.Infof("No file configuration for monitor tag %q; item %s was not processed", monitorTag, key)
+			fallbackConfigured := false
+			for _, fileConfig := range sortConfig.FileConfigs {
+				if fileConfig.UnmatchedMonitorTags {
+					groupedData[fileConfig.FileName] = append(groupedData[fileConfig.FileName], value)
+					fallbackConfigured = true
+				}
+			}
+			if fallbackConfigured {
+				logger.Infof("No file configuration for monitor tag %q; item %s was routed to unmatched monitor tags file", monitorTag, key)
+			} else {
+				logger.Infof("No file configuration for monitor tag %q; item %s was not processed", monitorTag, key)
+			}
 		}
 	}
 

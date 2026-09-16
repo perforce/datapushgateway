@@ -192,39 +192,48 @@ After this initial setup, DataPushGateway should operate autonomously, handling 
 ## Overview of `config.yaml` Structure
 
 ### File Configurations (`file_configs`)
+
 Each entry under `file_configs` represents a Markdown file to be generated with specific components:
 - `file_name`: Name of the Markdown file with `%INSTANCE%` as a dynamic placeholder.
 - `directory`: Directory path for file storage, supporting `%INSTANCE%` placeholder.
 - `monitor_tags`: List of tags for categorizing data into the respective file.
+- `unmatched_monitor_tags`: Optional boolean. Set to `true` to send JSON items whose `monitor_tag` does not appear in any `monitor_tags` list to this file.
 
 ## File Categorization Process
 
 ### Dynamic Naming and Directory Paths
+
 - `%INSTANCE%` placeholder allows for dynamic creation of file names and directories based on the Perforce server instance.
 
 ### Tag-Based Sorting
+
 - Incoming data is processed and categorized based on `monitor_tags`.
 - Each tag corresponds to a specific type of data or metric.
+- Unmatched tags are logged at info level and, when configured, written to the file with `unmatched_monitor_tags: true`.
 
 ## Examples of File Configurations
 
 ### Instance-Specific Server Reports
+
 - `file_name: HRA-%INSTANCE%` 
   - Comprehensive report for each instance including OS tests, disk alerts, server info, and Perforce configurations.
 - `directory: servers`
   - Stored in the `servers` directory.
 
 ### Support Related Information
+
 - `file_name: support`
   - Gathers data like disk alerts, server configurations for support.
 - `directory: servers/%INSTANCE%`
   - Stored in a subdirectory named after the instance under `servers`.
 
 ### Detailed Configuration and System Information
+
 - Separate files for triggers, extensions, properties, each with specific `monitor_tags`.
 - Organized under `servers/%INSTANCE%/info`.
 
 ## Documentation Format
+
 - Markdown files include relevant data categorized under respective `monitor_tags`.
 - Structured format for quick reference and understanding of server configurations and status.
 
@@ -310,6 +319,7 @@ DataPushGateway offers a set of HTTP endpoints designed for managing and organiz
 - **Command-Line Interface**: Uses `kingpin.v2` for CLI handling, with various configuration flags.
 
 ### TODO
+
 - Better User management
 - submit on directory attached to user
 - Bug with directory structure and file names seems to run over each other
