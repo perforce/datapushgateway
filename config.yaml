@@ -97,6 +97,10 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - p4 configure show
+  - file_name: p4changestats
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - changestats
   - file_name: p4servers
     directory: servers/%INSTANCE%/info
     monitor_tags:
