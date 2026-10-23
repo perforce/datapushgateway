@@ -40,6 +40,9 @@ file_configs:
       - systemd
       - disk space
       - crontab
+      - PHP version
+      - PHP packages
+      - Available package updates
       - HAS_env
       - p4 configure show
       - p4 triggers
@@ -101,6 +104,15 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - changestats
+  - file_name: php-info
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - PHP version
+      - PHP packages
+  - file_name: package-updates
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - Available package updates
   - file_name: p4servers
     directory: servers/%INSTANCE%/info
     monitor_tags:
@@ -146,5 +158,4 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - license
-
 
