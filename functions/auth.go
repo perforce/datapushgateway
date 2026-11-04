@@ -23,6 +23,12 @@ type AuthFile struct {
 
 var usersPasswords = map[string]string{}
 
+var validName = regexp.MustCompile(`^[a-zA-Z0-9_.-]+$`)
+
+func IsValidName(name string) bool {
+	return name != "." && name != ".." && validName.MatchString(name)
+}
+
 func VerifyUserPass(username, password string) bool {
 	wantPass, hasUser := usersPasswords[username]
 	if !hasUser {
@@ -70,8 +76,7 @@ func HandleHTTP(w http.ResponseWriter, req *http.Request, logger *logrus.Logger,
 		return "", "", fmt.Errorf("Customer or Instance not specified")
 	}
 	// Whitelist check using regular expression
-	var validName = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	if !validName.MatchString(customer) || !validName.MatchString(instance) {
+	if !IsValidName(customer) || !IsValidName(instance) {
 		http.Error(w, "Invalid characters in customer or instance name", http.StatusBadRequest)
 		return "", "", fmt.Errorf("Invalid characters detected")
 	}

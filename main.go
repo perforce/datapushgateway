@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"regexp"
 
 	"datapushgateway/functions"
 
@@ -128,8 +127,6 @@ func main() {
 	}))
 
 	mux.HandleFunc("/data/", ConnectionLoggingMiddleware(func(w http.ResponseWriter, req *http.Request) {
-		var validName = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-
 		user, pass, ok := req.BasicAuth()
 		if ok && functions.VerifyUserPass(user, pass) {
 			logger.Debugf("Basic auth verified for user: %s", user)
@@ -138,7 +135,7 @@ func main() {
 			instance := query.Get("instance")
 
 			// Validate the customer and instance parameters
-			if customer == "" || instance == "" || !validName.MatchString(customer) || !validName.MatchString(instance) {
+			if !functions.IsValidName(customer) || !functions.IsValidName(instance) {
 				http.Error(w, "Invalid or missing customer or instance name", http.StatusBadRequest)
 				return
 			}

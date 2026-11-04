@@ -37,12 +37,16 @@ file_configs:
       - Command-Runner Version
       - license
       - hostnamectl
+      - kernel release
+      - kernel packages
+      - reboot required
       - systemd
       - disk space
       - crontab
       - PHP version
       - PHP packages
       - Available package updates
+      - security updates
       - HAS_env
       - p4 configure show
       - p4 triggers
@@ -113,6 +117,13 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - Available package updates
+      - security updates
+  - file_name: kernel-info
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - kernel release
+      - kernel packages
+      - reboot required
   - file_name: p4servers
     directory: servers/%INSTANCE%/info
     monitor_tags:
