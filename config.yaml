@@ -39,6 +39,7 @@ file_configs:
       - hostnamectl
       - kernel release
       - kernel packages
+      - installed packages
       - reboot required
       - systemd
       - disk space
@@ -124,6 +125,10 @@ file_configs:
       - kernel release
       - kernel packages
       - reboot required
+  - file_name: installed-packages
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - installed packages
   - file_name: p4servers
     directory: servers/%INSTANCE%/info
     monitor_tags:

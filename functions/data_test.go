@@ -20,6 +20,7 @@ func TestSystemUpdateTagRouting(t *testing.T) {
 	}{
 		{"kernel release", "Running kernel release", "6.8.0-88-generic", "kernel-info.md"},
 		{"kernel packages", "Installed kernel packages", "linux-image-generic 6.8.0-88.89", "kernel-info.md"},
+		{"installed packages", "Installed packages", "curl 8.5.0-2ubuntu10", "installed-packages.md"},
 		{"reboot required", "Reboot required status", "No reboot required", "kernel-info.md"},
 		{"security updates", "Available security updates", "No security updates available", "package-updates.md"},
 	}
