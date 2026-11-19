@@ -52,8 +52,8 @@ fi
 
 # Prompt for install directories or use defaults
 WORKING_INSTALL_DIR=$(prompt "Enter WorkingDirectory installation directory" "/opt/perforce/datapushgateway")
-CONF_INSTALL_DIR=$(prompt "Enter config.yaml installation directory" "/opt/perforce/datapushgateway")
-CONF_FILENAME=$(prompt "Enter name for config file" "config.yaml")
+CONF_INSTALL_DIR=$(prompt "Enter config file installation directory" "/opt/perforce/datapushgateway")
+CONF_FILENAME=$(prompt "Enter name for config file" "datapushgateway_config.yaml")
 AUTH_INSTALL_DIR=$(prompt "Enter auth.yaml installation directory" "/opt/perforce/datapushgateway")
 AUTH_FILENAME=$(prompt "Enter name for auth file" "auth.yaml")
 P4CONFIG_INSTALL_DIR=$(prompt "Enter .P4CONFIG installation directory" "/opt/perforce/datapushgateway")
@@ -105,9 +105,9 @@ fi
 
 backup_if_exists "${CONF_INSTALL_DIR}/${CONF_FILENAME}"
 if [ $? -eq 0 ]; then
-    # Copy config.yaml only if user allowed overwrite
-    run_command "install -m 0644 config.yaml ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
-    # Secure the config.yaml file by restricting permissions
+    # Copy the config file only if user allowed overwrite
+    run_command "install -m 0644 datapushgateway_config.yaml ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
+    # Secure the config file by restricting permissions
     run_command "chmod 600 ${CONF_INSTALL_DIR}/${CONF_FILENAME}"
 else
     echo "Continuing without overwriting ${CONF_INSTALL_DIR}/${CONF_FILENAME}"

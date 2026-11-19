@@ -55,7 +55,7 @@ func LoadConfig(configFile string) (*Config, error) {
 
 	p4ConfigPath = config.ApplicationConfig.P4Config
 	if p4ConfigPath == "" {
-		return &config, fmt.Errorf("P4CONFIG not found or is empty in config.yaml")
+		return &config, fmt.Errorf("P4CONFIG not found or is empty in %q", configFile)
 	}
 
 	p4Bin = config.ApplicationConfig.P4Bin

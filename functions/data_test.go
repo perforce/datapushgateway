@@ -24,7 +24,7 @@ func TestSystemUpdateTagRouting(t *testing.T) {
 		{"reboot required", "Reboot required status", "No reboot required", "kernel-info.md"},
 		{"security updates", "Available security updates", "No security updates available", "package-updates.md"},
 	}
-	for _, configFile := range []string{"../config.yaml", "../setup/datapushgateway/config.yaml"} {
+	for _, configFile := range []string{"../datapushgateway_config.yaml", "../setup/datapushgateway/datapushgateway_config.yaml"} {
 		t.Run(configFile, func(t *testing.T) {
 			dataDir := t.TempDir()
 			customer, instance := "eve.games", "eve.games-helixcore-useast1"

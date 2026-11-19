@@ -34,7 +34,7 @@ func main() {
 		configFile = kingpin.Flag(
 			"config",
 			"Config file specifying location of p4config and various mapping locations.",
-		).Short('c').Default("config.yaml").String()
+		).Short('c').Default("datapushgateway_config.yaml").String()
 		port = kingpin.Flag(
 			"port",
 			"Port to listen on.",

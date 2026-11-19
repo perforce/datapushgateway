@@ -20,12 +20,12 @@ DataPushGateway is a Go HTTP server that receives monitoring data via HTTP POST,
    - Users defined as array with `username`, `password`, and `url_prefix` fields
 
 3. **Data Processing** ([functions/data.go](functions/data.go)):
-   - Reads `config.yaml` `file_configs` to route data by `monitor_tags`
+   - Reads `datapushgateway_config.yaml` `file_configs` to route data by `monitor_tags`
    - Groups JSON items by tag, creates Markdown files with base64-decoded outputs
    - Supports `%INSTANCE%` placeholder in file names and directories
 
 4. **Perforce Integration** ([functions/p4cmds.go](functions/p4cmds.go)):
-   - Uses P4CONFIG file for connection settings (configured in `config.yaml`)
+   - Uses P4CONFIG file for connection settings (configured in `datapushgateway_config.yaml`)
    - Workflow: `p4 rec` → `p4 sync` → `p4 resolve -ay` → `p4 submit` (if changes exist)
    - Auto-login with ticket validation
 
@@ -33,12 +33,12 @@ DataPushGateway is a Go HTTP server that receives monitoring data via HTTP POST,
 
 **Critical**: Configuration uses TWO files that reference each other:
 
-1. **config.yaml**: 
+1. **datapushgateway_config.yaml**:
    - `applicationConfig.P4CONFIG` → points to `.p4config` file location
    - `applicationConfig.p4bin` → p4 executable path
    - `file_configs[]` → array of tag-based routing rules
 
-2. **.p4config** (referenced in config.yaml):
+2. **.p4config** (referenced in datapushgateway_config.yaml):
    - Standard Perforce environment: `P4PORT`, `P4USER`, `P4CLIENT`, `P4TICKETS`, `P4TRUST`
 
 3. **auth.yaml**: `users` array with `username`, `password`, and `url_prefix` fields
@@ -55,7 +55,7 @@ make dist              # Cross-platform builds to bin/
 ```bash
 ./datapushgateway \
   --auth.file auth.yaml \
-  --config config.yaml \
+  --config datapushgateway_config.yaml \
   --port :9092 \
   --debug \
   --log /var/log/datapushgateway.log \
@@ -90,7 +90,7 @@ curl -X POST -u test:test \
 ## Critical Patterns
 
 ### Tag-Based Routing
-The `config.yaml` `file_configs` array determines which monitor tags go into which Markdown files:
+The `datapushgateway_config.yaml` `file_configs` array determines which monitor tags go into which Markdown files:
 ```yaml
 - file_name: support
   directory: servers/%INSTANCE%
@@ -126,10 +126,10 @@ ConnectionLoggingMiddleware := func(next http.HandlerFunc) http.HandlerFunc {
 
 ## Common Gotchas
 
-1. **P4CONFIG Path**: Must be absolute path in `config.yaml`; relative paths fail silently
+1. **P4CONFIG Path**: Must be absolute path in `datapushgateway_config.yaml`; relative paths fail silently
 2. **Instance Placeholder**: Use `%INSTANCE%` in config, gets replaced at runtime in both filenames and directories
 3. **Empty Markdown**: Files with no content are automatically removed after creation
-4. **Order Preservation**: Monitor tags processed in config.yaml order for consistent file structure
+4. **Order Preservation**: Monitor tags processed in configuration order for consistent file structure
 5. **Plaintext Passwords**: `auth.yaml` uses plaintext passwords - ensure file permissions are restrictive (600)
 
 ## Version Information

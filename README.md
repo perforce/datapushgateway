@@ -17,7 +17,7 @@ DataPushGateway is especially valuable for organizations that prioritize organiz
     - [Create a DataPushGateway Bot User:](#create-a-datapushgateway-bot-user)
     - [Create a Perforce Client Workspace:](#create-a-perforce-client-workspace)
 - [DataPushGateway Files and Sorting Process via the JSON endpoint](#datapushgateway-files-and-sorting-process-via-the-json-endpoint)
-  - [Overview of `config.yaml` Structure](#overview-of-configyaml-structure)
+  - [Overview of `datapushgateway_config.yaml` Structure](#overview-of-datapushgateway_configyaml-structure)
     - [File Configurations (`file_configs`)](#file-configurations-file_configs)
   - [File Categorization Process](#file-categorization-process)
     - [Dynamic Naming and Directory Paths](#dynamic-naming-and-directory-paths)
@@ -94,16 +94,16 @@ DataPushGateway serves as a companion to Prometheus Pushgateway, focusing on the
 
 2. Adjust the `Root` and `View` as per your server setup. The `Root` should match the directory where DataPushGateway will store its data.
 
-Before starting the DataPushGateway, you need to set up the `config.yaml` file with the appropriate settings:
+Before starting the DataPushGateway, set up `datapushgateway_config.yaml`. If your existing configuration is still named `config.yaml`, rename it or pass its path explicitly with `--config`.
 
-3. Set the `P4CONFIG` path in the `config.yaml` file. This path points to your `.p4config` file which contains necessary Perforce settings. Add the following line to `config.yaml`:
+3. Set the `P4CONFIG` path in `datapushgateway_config.yaml`. This path points to your `.p4config` file, which contains the Perforce settings:
 
 ```
 applicationConfig:
   P4CONFIG: /home/datapushgateway/github-local/datapushgateway/p4stuff/.p4config
 ```
 
-4. Edit `.p4config` file in the directory defined in the config.yaml
+4. Edit the `.p4config` file at the path specified in `datapushgateway_config.yaml`.
 
 ```
 P4PORT=ssl:my_monitoring_server:1666
@@ -113,7 +113,7 @@ P4TICKETS=/home/datapushgateway/p4stuff/.p4tickets
 P4TRUST=/home/datapushgateway/p4stuff/.p4trust
 ```
 
-5. Ensure that other settings in `config.yaml` are correctly configured according to your environment and requirements.
+5. Ensure the other settings in `datapushgateway_config.yaml` match your environment.
 
 6. Configure `auth.yaml`:
 
@@ -189,7 +189,7 @@ After this initial setup, DataPushGateway should operate autonomously, handling 
 
 # DataPushGateway Files and Sorting Process via the JSON endpoint
 
-## Overview of `config.yaml` Structure
+## Overview of `datapushgateway_config.yaml` Structure
 
 ### File Configurations (`file_configs`)
 

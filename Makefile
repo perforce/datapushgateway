@@ -29,7 +29,7 @@ dist: clean
 	mkdir -p setup/datapushgateway
 
 	# Copy necessary files into setup/datapushgateway
-	cp auth.yaml config.yaml setup.sh p4stuff/.p4config setup/datapushgateway/
+	cp auth.yaml datapushgateway_config.yaml setup.sh p4stuff/.p4config setup/datapushgateway/
 	cp bin/${BINARY}-linux-amd64 setup/datapushgateway/${BINARY}
 
 	# Create the packages directory

@@ -34,6 +34,7 @@ file_configs:
       - GCP
       - Autobot server_info
       - SDP Version
+      - Volume Info
       - Command-Runner Version
       - license
       - hostnamectl
@@ -151,6 +152,10 @@ file_configs:
     directory: servers/%INSTANCE%/info
     monitor_tags:
       - SDP Version
+  - file_name: Volume-info
+    directory: servers/%INSTANCE%/info
+    monitor_tags:
+      - Volume Info
   - file_name: Command-Runner-version
     directory: servers/%INSTANCE%/info
     monitor_tags:
