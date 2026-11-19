@@ -99,7 +99,7 @@ func formatSlackMessage(payload AlertPayload) string {
 
 func sendSlackWebhookMessage(slackCfg SlackConfig, message string) error {
 	if slackCfg.WebhookURL == "" {
-		return fmt.Errorf("slack webhook_url not configured")
+		return fmt.Errorf("slack webhook_url not configured; set DATAPUSHGATEWAY_SLACK_WEBHOOK_URL")
 	}
 	body, err := json.Marshal(map[string]string{"text": message})
 	if err != nil {
@@ -107,7 +107,8 @@ func sendSlackWebhookMessage(slackCfg SlackConfig, message string) error {
 	}
 	resp, err := http.Post(slackCfg.WebhookURL, "application/json", bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("error posting to Slack webhook: %v", err)
+		// HTTP errors can include the secret webhook URL.
+		return fmt.Errorf("error posting to Slack webhook (check the URL and network connectivity)")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {
@@ -117,8 +118,11 @@ func sendSlackWebhookMessage(slackCfg SlackConfig, message string) error {
 }
 
 func sendSlackBotMessage(slackCfg SlackConfig, message string) error {
-	if slackCfg.BotToken == "" || slackCfg.ChannelID == "" {
-		return fmt.Errorf("slack bot_token and channel_id must be configured for bot mode")
+	if slackCfg.BotToken == "" {
+		return fmt.Errorf("slack bot_token not configured; set DATAPUSHGATEWAY_SLACK_BOT_TOKEN")
+	}
+	if slackCfg.ChannelID == "" {
+		return fmt.Errorf("slack channel_id must be configured for bot mode")
 	}
 	body, err := json.Marshal(map[string]string{
 		"channel": slackCfg.ChannelID,

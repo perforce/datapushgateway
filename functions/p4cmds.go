@@ -53,6 +53,10 @@ func LoadConfig(configFile string) (*Config, error) {
 		return nil, err
 	}
 
+	slack := &config.Notifications.Slack
+	slack.WebhookURL = os.ExpandEnv(slack.WebhookURL)
+	slack.BotToken = os.ExpandEnv(slack.BotToken)
+
 	p4ConfigPath = config.ApplicationConfig.P4Config
 	if p4ConfigPath == "" {
 		return &config, fmt.Errorf("P4CONFIG not found or is empty in %q", configFile)

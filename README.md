@@ -16,6 +16,7 @@ DataPushGateway is especially valuable for organizations that prioritize organiz
   - [Detailed Installation Instructions](#detailed-installation-instructions)
     - [Create a DataPushGateway Bot User:](#create-a-datapushgateway-bot-user)
     - [Create a Perforce Client Workspace:](#create-a-perforce-client-workspace)
+    - [Configure Slack credentials](#configure-slack-credentials)
 - [DataPushGateway Files and Sorting Process via the JSON endpoint](#datapushgateway-files-and-sorting-process-via-the-json-endpoint)
   - [Overview of `datapushgateway_config.yaml` Structure](#overview-of-datapushgateway_configyaml-structure)
     - [File Configurations (`file_configs`)](#file-configurations-file_configs)
@@ -186,6 +187,36 @@ If the bot user's password is required during this process, DataPushGateway will
 
 After this initial setup, DataPushGateway should operate autonomously, handling subsequent logins and permissions without manual intervention.
 
+### Configure Slack credentials
+
+Keep the `${DATAPUSHGATEWAY_SLACK_WEBHOOK_URL}` and `${DATAPUSHGATEWAY_SLACK_BOT_TOKEN}` references in [datapushgateway_config.yaml](./datapushgateway_config.yaml), not the credential values. Create a private `.env` file with permissions `0600`. Add only the entry for your selected mode and replace its placeholder value:
+
+```dotenv
+DATAPUSHGATEWAY_SLACK_WEBHOOK_URL='replace-with-your-incoming-webhook-url'
+DATAPUSHGATEWAY_SLACK_BOT_TOKEN='replace-with-your-bot-token'
+```
+
+In the YAML, choose `mode: webhook` for an incoming webhook, or `mode: bot` and set `channel_id` for a bot token. Set `enabled: false` if you don't use Slack notifications.
+
+**systemd:** Store the file at `/opt/perforce/datapushgateway/.env` as `root:root` with mode `0600`. Run `sudo systemctl edit datapushgateway` and add:
+
+```ini
+[Service]
+EnvironmentFile=/opt/perforce/datapushgateway/.env
+```
+
+Then run `sudo systemctl restart datapushgateway`. Restart again after rotating either credential.
+
+**Local shell:** From the directory containing your private `.env`, source it with automatic export before starting the gateway:
+
+```bash
+set -a
+. ./.env
+set +a
+./datapushgateway --config datapushgateway_config.yaml
+```
+
+The gateway reads these values from its process environment at startup; it does not open `.env` itself. Never commit the `.env` file. If you previously committed a real Slack credential in YAML, revoke or rotate it.
 
 # DataPushGateway Files and Sorting Process via the JSON endpoint
 

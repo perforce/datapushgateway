@@ -13,12 +13,13 @@ applicationConfig:
 # ----------------------
 # notifications: Optional outbound alerts for OOM kill candidates and actual kills.
 # Set mode to "bot" to use chat.postMessage; otherwise use an incoming webhook.
+# Load the credentials into the service environment; see README.md.
 notifications:
   slack:
     enabled: true
     mode: "webhook"
-    webhook_url: "https://hooks.slack.com/services/..."
-    # bot_token: "xoxb-..."
+    webhook_url: "${DATAPUSHGATEWAY_SLACK_WEBHOOK_URL}"
+    bot_token: "${DATAPUSHGATEWAY_SLACK_BOT_TOKEN}"
     # channel_id: "C0123456789"
 
 ## File sorting and directory configuration
